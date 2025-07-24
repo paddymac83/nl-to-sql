@@ -1,5 +1,6 @@
 # Environment variables (IMPORTANT - don't commit API keys!)
 .env
+.env.example
 
 # Python
 __pycache__/
