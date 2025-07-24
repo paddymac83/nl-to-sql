@@ -1,0 +1,19 @@
+{
+    "project_name": "NL to SQL Agent",
+    "project_slug": "{{ cookiecutter.project_name.lower().replace(' ', '-').replace('_', '-') }}",
+    "package_name": "{{ cookiecutter.project_slug.replace('-', '_') }}",
+    "author_name": "Your Name",
+    "author_email": "your.email@example.com",
+    "version": "0.1.0",
+    "description": "An AI-powered natural language to SQL converter with visualization capabilities",
+    "license": ["MIT", "BSD-3-Clause", "Apache-2.0", "GPL-3.0"],
+    "python_version": ["3.11", "3.10", "3.9", "3.8"],
+    "database_type": ["postgresql", "mysql", "sqlite"],
+    "ai_provider": ["openai", "anthropic", "azure-openai"],
+    "include_docker": ["yes", "no"],
+    "include_notebooks": ["yes", "no"],
+    "use_fastapi": ["yes", "no"],
+    "include_streamlit": ["yes", "no"],
+    "include_tests": ["yes", "no"],
+    "use_async": ["yes", "no"]
+}

@@ -1,0 +1,1065 @@
+{
+  "4993e814d75c": {
+    "session_id": "4993e814d75c",
+    "user_id": "user123",
+    "timestamp": "2025-07-22 10:38:56.102898",
+    "natural_language_query": "How much did I spend last month?",
+    "sql_query": null,
+    "execution_result": {
+      "success": false,
+      "data": null,
+      "row_count": 0,
+      "execution_time_ms": 0.0,
+      "error_message": "'SQLQuery' object has no attribute 'get'",
+      "query_plan": null,
+      "data_quality_score": 1.0
+    },
+    "feedback_score": 4.5,
+    "human_feedback": "Query worked well!",
+    "system_metrics": {}
+  },
+  "9a53a7204e72": {
+    "session_id": "9a53a7204e72",
+    "user_id": "user123",
+    "timestamp": "2025-07-22 10:40:49.915455",
+    "natural_language_query": "How much did I spend last month?",
+    "sql_query": null,
+    "execution_result": {
+      "success": false,
+      "data": null,
+      "row_count": 0,
+      "execution_time_ms": 0.0,
+      "error_message": "'SQLQuery' object has no attribute 'get'",
+      "query_plan": null,
+      "data_quality_score": 1.0
+    },
+    "feedback_score": 4.5,
+    "human_feedback": "Query worked well!",
+    "system_metrics": {}
+  },
+  "27cfd96f2d93": {
+    "session_id": "27cfd96f2d93",
+    "user_id": "user123",
+    "timestamp": "2025-07-22 10:49:25.244913",
+    "natural_language_query": "How much did I spend last month?",
+    "sql_query": null,
+    "execution_result": {
+      "success": false,
+      "data": null,
+      "row_count": 0,
+      "execution_time_ms": 0.0,
+      "error_message": "'SQLQuery' object has no attribute 'get'",
+      "query_plan": null,
+      "data_quality_score": 1.0
+    },
+    "feedback_score": 4.5,
+    "human_feedback": "Query worked well!",
+    "system_metrics": {}
+  },
+  "a6d0deeeb573": {
+    "session_id": "a6d0deeeb573",
+    "user_id": "user123",
+    "timestamp": "2025-07-22 10:53:57.180569",
+    "natural_language_query": "How much did I spend last month?",
+    "sql_query": null,
+    "execution_result": {
+      "success": false,
+      "data": null,
+      "row_count": 0,
+      "execution_time_ms": 0.0,
+      "error_message": "'SQLQuery' object has no attribute 'get'",
+      "query_plan": null,
+      "data_quality_score": 1.0
+    },
+    "feedback_score": 4.5,
+    "human_feedback": "Query worked well!",
+    "system_metrics": {}
+  },
+  "6d937e86fc70": {
+    "session_id": "6d937e86fc70",
+    "user_id": "user123",
+    "timestamp": "2025-07-22 10:54:23.508840",
+    "natural_language_query": "How much did I spend last month?",
+    "sql_query": null,
+    "execution_result": {
+      "success": false,
+      "data": null,
+      "row_count": 0,
+      "execution_time_ms": 0.0,
+      "error_message": "'SQLQuery' object has no attribute 'get'",
+      "query_plan": null,
+      "data_quality_score": 1.0
+    },
+    "feedback_score": 4.5,
+    "human_feedback": "Query worked well!",
+    "system_metrics": {}
+  },
+  "f8e3eb8459f1": {
+    "session_id": "f8e3eb8459f1",
+    "user_id": "user123",
+    "timestamp": "2025-07-22 10:55:09.261963",
+    "natural_language_query": "How much did I spend last month?",
+    "sql_query": null,
+    "execution_result": {
+      "success": false,
+      "data": null,
+      "row_count": 0,
+      "execution_time_ms": 0.0,
+      "error_message": "'SQLQuery' object has no attribute 'get'",
+      "query_plan": null,
+      "data_quality_score": 1.0
+    },
+    "feedback_score": null,
+    "human_feedback": null,
+    "system_metrics": {}
+  },
+  "e46066edc17a": {
+    "session_id": "e46066edc17a",
+    "user_id": "user123",
+    "timestamp": "2025-07-22 10:55:18.001812",
+    "natural_language_query": "How much did I spend last month?",
+    "sql_query": null,
+    "execution_result": {
+      "success": false,
+      "data": null,
+      "row_count": 0,
+      "execution_time_ms": 0.0,
+      "error_message": "'SQLQuery' object has no attribute 'get'",
+      "query_plan": null,
+      "data_quality_score": 1.0
+    },
+    "feedback_score": 4.5,
+    "human_feedback": "Query worked well!",
+    "system_metrics": {}
+  },
+  "a0746ad56bfa": {
+    "session_id": "a0746ad56bfa",
+    "user_id": "user123",
+    "timestamp": "2025-07-22 10:56:09.463700",
+    "natural_language_query": "How much did I spend last month?",
+    "sql_query": null,
+    "execution_result": {
+      "success": false,
+      "data": null,
+      "row_count": 0,
+      "execution_time_ms": 0.0,
+      "error_message": "'SQLQuery' object has no attribute 'get'",
+      "query_plan": null,
+      "data_quality_score": 1.0
+    },
+    "feedback_score": null,
+    "human_feedback": null,
+    "system_metrics": {}
+  },
+  "f68fd4640b8a": {
+    "session_id": "f68fd4640b8a",
+    "user_id": "user123",
+    "timestamp": "2025-07-22 10:56:15.592198",
+    "natural_language_query": "How much did I spend last month?",
+    "sql_query": null,
+    "execution_result": {
+      "success": false,
+      "data": null,
+      "row_count": 0,
+      "execution_time_ms": 0.0,
+      "error_message": "'SQLQuery' object has no attribute 'get'",
+      "query_plan": null,
+      "data_quality_score": 1.0
+    },
+    "feedback_score": null,
+    "human_feedback": null,
+    "system_metrics": {}
+  },
+  "aa4c98a3643b": {
+    "session_id": "aa4c98a3643b",
+    "user_id": "user123",
+    "timestamp": "2025-07-22 10:57:04.880114",
+    "natural_language_query": "How much did I spend last month?",
+    "sql_query": null,
+    "execution_result": {
+      "success": false,
+      "data": null,
+      "row_count": 0,
+      "execution_time_ms": 0.0,
+      "error_message": "'SQLQuery' object has no attribute 'get'",
+      "query_plan": null,
+      "data_quality_score": 1.0
+    },
+    "feedback_score": 4.5,
+    "human_feedback": "Query worked well!",
+    "system_metrics": {}
+  },
+  "bb62d4fe7165": {
+    "session_id": "bb62d4fe7165",
+    "user_id": "user123",
+    "timestamp": "2025-07-22 11:02:38.287630",
+    "natural_language_query": "How much did I spend last month?",
+    "sql_query": null,
+    "execution_result": {
+      "success": false,
+      "data": null,
+      "row_count": 0,
+      "execution_time_ms": 0.0,
+      "error_message": "'SQLQuery' object does not support item assignment",
+      "query_plan": null,
+      "data_quality_score": 1.0
+    },
+    "feedback_score": 4.5,
+    "human_feedback": "Query worked well!",
+    "system_metrics": {}
+  },
+  "c4c1c45a0407": {
+    "session_id": "c4c1c45a0407",
+    "user_id": "user123",
+    "timestamp": "2025-07-22 11:03:38.434370",
+    "natural_language_query": "How much did I spend last month?",
+    "sql_query": null,
+    "execution_result": {
+      "success": false,
+      "data": null,
+      "row_count": 0,
+      "execution_time_ms": 0.0,
+      "error_message": "'SQLQuery' object does not support item assignment",
+      "query_plan": null,
+      "data_quality_score": 1.0
+    },
+    "feedback_score": 4.5,
+    "human_feedback": "Query worked well!",
+    "system_metrics": {}
+  },
+  "eaf1c04bea8f": {
+    "session_id": "eaf1c04bea8f",
+    "user_id": "user123",
+    "timestamp": "2025-07-22 11:03:53.086097",
+    "natural_language_query": "How much did I spend last month?",
+    "sql_query": null,
+    "execution_result": {
+      "success": false,
+      "data": null,
+      "row_count": 0,
+      "execution_time_ms": 0.0,
+      "error_message": "'SQLQuery' object does not support item assignment",
+      "query_plan": null,
+      "data_quality_score": 1.0
+    },
+    "feedback_score": 4.5,
+    "human_feedback": "Query worked well!",
+    "system_metrics": {}
+  },
+  "cb4c2ad7c4a7": {
+    "session_id": "cb4c2ad7c4a7",
+    "user_id": "user123",
+    "timestamp": "2025-07-22 11:04:00.510721",
+    "natural_language_query": "How much did I spend last month?",
+    "sql_query": null,
+    "execution_result": {
+      "success": false,
+      "data": null,
+      "row_count": 0,
+      "execution_time_ms": 0.0,
+      "error_message": "'SQLQuery' object does not support item assignment",
+      "query_plan": null,
+      "data_quality_score": 1.0
+    },
+    "feedback_score": 4.5,
+    "human_feedback": "Query worked well!",
+    "system_metrics": {}
+  },
+  "8d0962fa9d43": {
+    "session_id": "8d0962fa9d43",
+    "user_id": "user123",
+    "timestamp": "2025-07-22 11:04:14.722458",
+    "natural_language_query": "How much did I spend last month?",
+    "sql_query": null,
+    "execution_result": {
+      "success": false,
+      "data": null,
+      "row_count": 0,
+      "execution_time_ms": 0.0,
+      "error_message": "'SQLQuery' object does not support item assignment",
+      "query_plan": null,
+      "data_quality_score": 1.0
+    },
+    "feedback_score": 4.5,
+    "human_feedback": "Query worked well!",
+    "system_metrics": {}
+  },
+  "f83689387701": {
+    "session_id": "f83689387701",
+    "user_id": "user123",
+    "timestamp": "2025-07-22 11:04:18.193606",
+    "natural_language_query": "How much did I spend last month?",
+    "sql_query": null,
+    "execution_result": {
+      "success": false,
+      "data": null,
+      "row_count": 0,
+      "execution_time_ms": 0.0,
+      "error_message": "'SQLQuery' object does not support item assignment",
+      "query_plan": null,
+      "data_quality_score": 1.0
+    },
+    "feedback_score": 4.5,
+    "human_feedback": "Query worked well!",
+    "system_metrics": {}
+  },
+  "0d1abec3d482": {
+    "session_id": "0d1abec3d482",
+    "user_id": "user123",
+    "timestamp": "2025-07-22 11:06:21.354049",
+    "natural_language_query": "How much did I spend last month?",
+    "sql_query": null,
+    "execution_result": {
+      "success": false,
+      "data": null,
+      "row_count": 0,
+      "execution_time_ms": 0.0,
+      "error_message": "'SQLQuery' object does not support item assignment",
+      "query_plan": null,
+      "data_quality_score": 1.0
+    },
+    "feedback_score": 4.5,
+    "human_feedback": "Query worked well!",
+    "system_metrics": {}
+  },
+  "8bc5202f992e": {
+    "session_id": "8bc5202f992e",
+    "user_id": "user123",
+    "timestamp": "2025-07-22 11:11:36.102943",
+    "natural_language_query": "How much did I spend last month?",
+    "sql_query": {
+      "query": "SELECT SUM(amount) AS total_spent FROM payments WHERE user_id = 'user123' AND payment_date >= DATE_TRUNC('month', CURRENT_DATE) - INTERVAL '1 month' AND payment_date < DATE_TRUNC('month', CURRENT_DATE)",
+      "query_type": "aggregate",
+      "complexity": "simple",
+      "tables_used": [
+        "payments"
+      ],
+      "columns_used": [
+        "amount",
+        "user_id",
+        "payment_date"
+      ],
+      "has_aggregation": true,
+      "has_joins": false,
+      "estimated_rows": null,
+      "confidence_score": 0.9
+    },
+    "execution_result": {
+      "success": false,
+      "data": null,
+      "row_count": 0,
+      "execution_time_ms": 35.973548889160156,
+      "error_message": "(psycopg2.errors.InFailedSqlTransaction) current transaction is aborted, commands ignored until end of transaction block\n\n[SQL: SELECT SUM(amount) AS total_spent FROM payments WHERE user_id = 'user123' AND payment_date >= DATE_TRUNC('month', CURRENT_DATE) - INTERVAL '1 month' AND payment_date < DATE_TRUNC('month', CURRENT_DATE)]\n(Background on this error at: https://sqlalche.me/e/20/2j85)",
+      "query_plan": null,
+      "data_quality_score": 1.0
+    },
+    "feedback_score": 4.5,
+    "human_feedback": "Query worked well!",
+    "system_metrics": {}
+  },
+  "1126e92fa11e": {
+    "session_id": "1126e92fa11e",
+    "user_id": "user123",
+    "timestamp": "2025-07-22 11:12:43.700649",
+    "natural_language_query": "How much did I spend last month?",
+    "sql_query": {
+      "query": "SELECT SUM(amount) AS total_spent FROM payments WHERE user_id = 'user123' AND payment_date >= DATE_TRUNC('month', CURRENT_DATE) - INTERVAL '1 month' AND payment_date < DATE_TRUNC('month', CURRENT_DATE)",
+      "query_type": "aggregate",
+      "complexity": "simple",
+      "tables_used": [
+        "payments"
+      ],
+      "columns_used": [
+        "amount",
+        "user_id",
+        "payment_date"
+      ],
+      "has_aggregation": true,
+      "has_joins": false,
+      "estimated_rows": null,
+      "confidence_score": 0.95
+    },
+    "execution_result": {
+      "success": false,
+      "data": null,
+      "row_count": 0,
+      "execution_time_ms": 12.060165405273438,
+      "error_message": "(psycopg2.errors.InFailedSqlTransaction) current transaction is aborted, commands ignored until end of transaction block\n\n[SQL: SELECT SUM(amount) AS total_spent FROM payments WHERE user_id = 'user123' AND payment_date >= DATE_TRUNC('month', CURRENT_DATE) - INTERVAL '1 month' AND payment_date < DATE_TRUNC('month', CURRENT_DATE)]\n(Background on this error at: https://sqlalche.me/e/20/2j85)",
+      "query_plan": null,
+      "data_quality_score": 1.0
+    },
+    "feedback_score": 4.5,
+    "human_feedback": "Query worked well!",
+    "system_metrics": {}
+  },
+  "09a4ac2d1cdb": {
+    "session_id": "09a4ac2d1cdb",
+    "user_id": "user123",
+    "timestamp": "2025-07-22 11:44:23.005238",
+    "natural_language_query": "How much did I spend last month?",
+    "sql_query": {
+      "query": "SELECT SUM(amount) AS total_spent FROM payments WHERE user_id = 'user123' AND payment_date >= DATE_TRUNC('month', CURRENT_DATE) - INTERVAL '1 month' AND payment_date < DATE_TRUNC('month', CURRENT_DATE)",
+      "query_type": "aggregate",
+      "complexity": "simple",
+      "tables_used": [
+        "payments"
+      ],
+      "columns_used": [
+        "amount",
+        "user_id",
+        "payment_date"
+      ],
+      "has_aggregation": true,
+      "has_joins": false,
+      "estimated_rows": null,
+      "confidence_score": 0.9
+    },
+    "execution_result": null,
+    "feedback_score": null,
+    "human_feedback": null,
+    "system_metrics": {}
+  },
+  "ae81852eec0b": {
+    "session_id": "ae81852eec0b",
+    "user_id": "user123",
+    "timestamp": "2025-07-22 11:58:57.694830",
+    "natural_language_query": "How much did I spend last month?",
+    "sql_query": {
+      "query": "SELECT SUM(amount) AS total_spent FROM payments WHERE user_id = 'user123' AND payment_date >= DATE_TRUNC('month', CURRENT_DATE) - INTERVAL '1 month' AND payment_date < DATE_TRUNC('month', CURRENT_DATE)",
+      "query_type": "aggregate",
+      "complexity": "simple",
+      "tables_used": [
+        "payments"
+      ],
+      "columns_used": [
+        "amount",
+        "user_id",
+        "payment_date"
+      ],
+      "has_aggregation": true,
+      "has_joins": false,
+      "estimated_rows": null,
+      "confidence_score": 0.95
+    },
+    "execution_result": {
+      "success": false,
+      "data": null,
+      "row_count": 0,
+      "execution_time_ms": 38.50054740905762,
+      "error_message": "(psycopg2.errors.InFailedSqlTransaction) current transaction is aborted, commands ignored until end of transaction block\n\n[SQL: SELECT SUM(amount) AS total_spent FROM payments WHERE user_id = 'user123' AND payment_date >= DATE_TRUNC('month', CURRENT_DATE) - INTERVAL '1 month' AND payment_date < DATE_TRUNC('month', CURRENT_DATE)]\n(Background on this error at: https://sqlalche.me/e/20/2j85)",
+      "query_plan": null,
+      "data_quality_score": 1.0
+    },
+    "feedback_score": 4.5,
+    "human_feedback": "Query worked well!",
+    "system_metrics": {}
+  },
+  "c9d1a478e349": {
+    "session_id": "c9d1a478e349",
+    "user_id": "user123",
+    "timestamp": "2025-07-22 12:05:03.614045",
+    "natural_language_query": "How much did I spend last month?",
+    "sql_query": {
+      "query": "SELECT SUM(amount) AS total_spent FROM payments WHERE user_id = 'user123' AND payment_date >= date_trunc('month', CURRENT_DATE) - INTERVAL '1 month' AND payment_date < date_trunc('month', CURRENT_DATE);",
+      "query_type": "aggregate",
+      "complexity": "medium",
+      "tables_used": [
+        "payments"
+      ],
+      "columns_used": [
+        "amount",
+        "user_id",
+        "payment_date"
+      ],
+      "has_aggregation": true,
+      "has_joins": false,
+      "estimated_rows": null,
+      "confidence_score": 0.95
+    },
+    "execution_result": {
+      "success": false,
+      "data": null,
+      "row_count": 0,
+      "execution_time_ms": 17.36164093017578,
+      "error_message": "(psycopg2.errors.InFailedSqlTransaction) current transaction is aborted, commands ignored until end of transaction block\n\n[SQL: SELECT SUM(amount) AS total_spent FROM payments WHERE user_id = 'user123' AND payment_date >= date_trunc('month', CURRENT_DATE) - INTERVAL '1 month' AND payment_date < date_trunc('month', CURRENT_DATE);]\n(Background on this error at: https://sqlalche.me/e/20/2j85)",
+      "query_plan": null,
+      "data_quality_score": 1.0
+    },
+    "feedback_score": 4.5,
+    "human_feedback": "Query worked well!",
+    "system_metrics": {}
+  },
+  "b2e3f272dbe6": {
+    "session_id": "b2e3f272dbe6",
+    "user_id": "user123",
+    "timestamp": "2025-07-22 12:05:38.586736",
+    "natural_language_query": "How much did I spend last month?",
+    "sql_query": {
+      "query": "SELECT SUM(amount) AS total_spent FROM payments WHERE user_id = 'user123' AND payment_date >= date_trunc('month', current_date) - interval '1 month' AND payment_date < date_trunc('month', current_date);",
+      "query_type": "aggregate",
+      "complexity": "medium",
+      "tables_used": [
+        "payments"
+      ],
+      "columns_used": [
+        "amount",
+        "user_id",
+        "payment_date"
+      ],
+      "has_aggregation": true,
+      "has_joins": false,
+      "estimated_rows": null,
+      "confidence_score": 0.95
+    },
+    "execution_result": {
+      "success": false,
+      "data": null,
+      "row_count": 0,
+      "execution_time_ms": 13.71908187866211,
+      "error_message": "(psycopg2.errors.InFailedSqlTransaction) current transaction is aborted, commands ignored until end of transaction block\n\n[SQL: SELECT SUM(amount) AS total_spent FROM payments WHERE user_id = 'user123' AND payment_date >= date_trunc('month', current_date) - interval '1 month' AND payment_date < date_trunc('month', current_date);]\n(Background on this error at: https://sqlalche.me/e/20/2j85)",
+      "query_plan": null,
+      "data_quality_score": 1.0
+    },
+    "feedback_score": 4.5,
+    "human_feedback": "Query worked well!",
+    "system_metrics": {}
+  },
+  "39ffe2cff413": {
+    "session_id": "39ffe2cff413",
+    "user_id": "user123",
+    "timestamp": "2025-07-22 21:43:46.488517",
+    "natural_language_query": "How much did I spend last month?",
+    "sql_query": {
+      "query": "SELECT SUM(amount) AS total_spent FROM payments WHERE user_id = 'user123' AND payment_date >= date_trunc('month', CURRENT_DATE) - INTERVAL '1 month' AND payment_date < date_trunc('month', CURRENT_DATE);",
+      "query_type": "aggregate",
+      "complexity": "medium",
+      "tables_used": [
+        "payments"
+      ],
+      "columns_used": [
+        "amount",
+        "user_id",
+        "payment_date"
+      ],
+      "has_aggregation": true,
+      "has_joins": false,
+      "estimated_rows": null,
+      "confidence_score": 0.95
+    },
+    "execution_result": {
+      "success": false,
+      "data": null,
+      "row_count": 0,
+      "execution_time_ms": 30.734777450561523,
+      "error_message": "(psycopg2.errors.InFailedSqlTransaction) current transaction is aborted, commands ignored until end of transaction block\n\n[SQL: SELECT SUM(amount) AS total_spent FROM payments WHERE user_id = 'user123' AND payment_date >= date_trunc('month', CURRENT_DATE) - INTERVAL '1 month' AND payment_date < date_trunc('month', CURRENT_DATE);]\n(Background on this error at: https://sqlalche.me/e/20/2j85)",
+      "query_plan": null,
+      "data_quality_score": 1.0
+    },
+    "feedback_score": 4.5,
+    "human_feedback": "Query worked well!",
+    "system_metrics": {}
+  },
+  "2af5c8b17ac5": {
+    "session_id": "2af5c8b17ac5",
+    "user_id": "user123",
+    "timestamp": "2025-07-22 21:47:11.444793",
+    "natural_language_query": "How much did I spend last month?",
+    "sql_query": {
+      "query": "SELECT COALESCE(SUM(amount), 0) AS total_spent FROM payments WHERE user_id = 'user123' AND payment_date >= date_trunc('month', CURRENT_DATE) - INTERVAL '1 month' AND payment_date < date_trunc('month', CURRENT_DATE);",
+      "query_type": "aggregate",
+      "complexity": "medium",
+      "tables_used": [
+        "payments"
+      ],
+      "columns_used": [
+        "amount",
+        "user_id",
+        "payment_date"
+      ],
+      "has_aggregation": true,
+      "has_joins": false,
+      "estimated_rows": null,
+      "confidence_score": 0.95
+    },
+    "execution_result": {
+      "success": false,
+      "data": null,
+      "row_count": 0,
+      "execution_time_ms": 45.296430587768555,
+      "error_message": "1 validation error for QueryExecutionResult\nquery_plan\n  Input should be a valid dictionary [type=dict_type, input_value=[{'Plan': {'Node Type': '... with time zone)))\"}]}}], input_type=list]\n    For further information visit https://errors.pydantic.dev/2.11/v/dict_type",
+      "query_plan": null,
+      "data_quality_score": 1.0
+    },
+    "feedback_score": 4.5,
+    "human_feedback": "Query worked well!",
+    "system_metrics": {}
+  },
+  "52896a00b226": {
+    "session_id": "52896a00b226",
+    "user_id": "user_001",
+    "timestamp": "2025-07-22 21:51:24.578931",
+    "natural_language_query": "How much did I spend last month?",
+    "sql_query": {
+      "query": "SELECT SUM(amount) AS total_spent FROM payments WHERE user_id = 'user_001' AND payment_date >= DATE_TRUNC('month', CURRENT_DATE - INTERVAL '1 month') AND payment_date < DATE_TRUNC('month', CURRENT_DATE);",
+      "query_type": "aggregate",
+      "complexity": "medium",
+      "tables_used": [
+        "payments"
+      ],
+      "columns_used": [
+        "payments.amount",
+        "payments.user_id",
+        "payments.payment_date"
+      ],
+      "has_aggregation": true,
+      "has_joins": false,
+      "estimated_rows": null,
+      "confidence_score": 0.95
+    },
+    "execution_result": {
+      "success": true,
+      "data": [
+        {
+          "total_spent": 5695.15
+        }
+      ],
+      "row_count": 1,
+      "execution_time_ms": 27.193069458007812,
+      "error_message": null,
+      "query_plan": {
+        "Plan": {
+          "Node Type": "Aggregate",
+          "Strategy": "Plain",
+          "Partial Mode": "Simple",
+          "Parallel Aware": false,
+          "Async Capable": false,
+          "Startup Cost": 37.5,
+          "Total Cost": 37.51,
+          "Plan Rows": 1,
+          "Plan Width": 32,
+          "Plans": [
+            {
+              "Node Type": "Bitmap Heap Scan",
+              "Parent Relationship": "Outer",
+              "Parallel Aware": false,
+              "Async Capable": false,
+              "Relation Name": "payments",
+              "Alias": "payments",
+              "Startup Cost": 5.15,
+              "Total Cost": 37.33,
+              "Plan Rows": 67,
+              "Plan Width": 6,
+              "Recheck Cond": "(((user_id)::text = 'user_001'::text) AND (payment_date >= date_trunc('month'::text, (CURRENT_DATE - '1 mon'::interval))) AND (payment_date < date_trunc('month'::text, (CURRENT_DATE)::timestamp with time zone)))",
+              "Plans": [
+                {
+                  "Node Type": "Bitmap Index Scan",
+                  "Parent Relationship": "Outer",
+                  "Parallel Aware": false,
+                  "Async Capable": false,
+                  "Index Name": "idx_payments_user_date",
+                  "Startup Cost": 0.0,
+                  "Total Cost": 5.13,
+                  "Plan Rows": 67,
+                  "Plan Width": 0,
+                  "Index Cond": "(((user_id)::text = 'user_001'::text) AND (payment_date >= date_trunc('month'::text, (CURRENT_DATE - '1 mon'::interval))) AND (payment_date < date_trunc('month'::text, (CURRENT_DATE)::timestamp with time zone)))"
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "data_quality_score": 1.0
+    },
+    "feedback_score": 4.5,
+    "human_feedback": "Query worked well!",
+    "system_metrics": {}
+  },
+  "5e3580a78663": {
+    "session_id": "5e3580a78663",
+    "user_id": null,
+    "timestamp": "2025-07-22 21:51:27.325174",
+    "natural_language_query": "What are the top 5 merchants by total revenue?",
+    "sql_query": {
+      "query": "SELECT m.merchant_name, SUM(p.amount) AS total_revenue FROM merchants m JOIN payments p ON m.merchant_id = p.merchant_id GROUP BY m.merchant_name ORDER BY total_revenue DESC LIMIT 5;",
+      "query_type": "ranking",
+      "complexity": "medium",
+      "tables_used": [
+        "merchants",
+        "payments"
+      ],
+      "columns_used": [
+        "merchants.merchant_name",
+        "payments.amount",
+        "merchants.merchant_id",
+        "payments.merchant_id"
+      ],
+      "has_aggregation": true,
+      "has_joins": true,
+      "estimated_rows": null,
+      "confidence_score": 0.95
+    },
+    "execution_result": {
+      "success": true,
+      "data": [
+        {
+          "merchant_name": "Apple Store",
+          "total_revenue": 68812.54
+        },
+        {
+          "merchant_name": "Best Buy",
+          "total_revenue": 41146.89
+        },
+        {
+          "merchant_name": "Costco",
+          "total_revenue": 20584.99
+        },
+        {
+          "merchant_name": "Amazon",
+          "total_revenue": 10170.23
+        },
+        {
+          "merchant_name": "Target",
+          "total_revenue": 9625.0
+        }
+      ],
+      "row_count": 5,
+      "execution_time_ms": 7.582664489746094,
+      "error_message": null,
+      "query_plan": {
+        "Plan": {
+          "Node Type": "Limit",
+          "Parallel Aware": false,
+          "Async Capable": false,
+          "Startup Cost": 82.48,
+          "Total Cost": 82.49,
+          "Plan Rows": 5,
+          "Plan Width": 548,
+          "Plans": [
+            {
+              "Node Type": "Sort",
+              "Parent Relationship": "Outer",
+              "Parallel Aware": false,
+              "Async Capable": false,
+              "Startup Cost": 82.48,
+              "Total Cost": 82.73,
+              "Plan Rows": 100,
+              "Plan Width": 548,
+              "Sort Key": [
+                "(sum(p.amount)) DESC"
+              ],
+              "Plans": [
+                {
+                  "Node Type": "Aggregate",
+                  "Strategy": "Hashed",
+                  "Partial Mode": "Simple",
+                  "Parent Relationship": "Outer",
+                  "Parallel Aware": false,
+                  "Async Capable": false,
+                  "Startup Cost": 79.57,
+                  "Total Cost": 80.82,
+                  "Plan Rows": 100,
+                  "Plan Width": 548,
+                  "Group Key": [
+                    "m.merchant_name"
+                  ],
+                  "Planned Partitions": 0,
+                  "Plans": [
+                    {
+                      "Node Type": "Hash Join",
+                      "Parent Relationship": "Outer",
+                      "Parallel Aware": false,
+                      "Async Capable": false,
+                      "Join Type": "Inner",
+                      "Startup Cost": 12.25,
+                      "Total Cost": 69.05,
+                      "Plan Rows": 2104,
+                      "Plan Width": 522,
+                      "Inner Unique": true,
+                      "Hash Cond": "(p.merchant_id = m.merchant_id)",
+                      "Plans": [
+                        {
+                          "Node Type": "Seq Scan",
+                          "Parent Relationship": "Outer",
+                          "Parallel Aware": false,
+                          "Async Capable": false,
+                          "Relation Name": "payments",
+                          "Alias": "p",
+                          "Startup Cost": 0.0,
+                          "Total Cost": 51.04,
+                          "Plan Rows": 2104,
+                          "Plan Width": 10
+                        },
+                        {
+                          "Node Type": "Hash",
+                          "Parent Relationship": "Inner",
+                          "Parallel Aware": false,
+                          "Async Capable": false,
+                          "Startup Cost": 11.0,
+                          "Total Cost": 11.0,
+                          "Plan Rows": 100,
+                          "Plan Width": 520,
+                          "Plans": [
+                            {
+                              "Node Type": "Seq Scan",
+                              "Parent Relationship": "Outer",
+                              "Parallel Aware": false,
+                              "Async Capable": false,
+                              "Relation Name": "merchants",
+                              "Alias": "m",
+                              "Startup Cost": 0.0,
+                              "Total Cost": 11.0,
+                              "Plan Rows": 100,
+                              "Plan Width": 520
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "data_quality_score": 1.0
+    },
+    "feedback_score": null,
+    "human_feedback": null,
+    "system_metrics": {}
+  },
+  "9b945a80b5f1": {
+    "session_id": "9b945a80b5f1",
+    "user_id": "user_001",
+    "timestamp": "2025-07-22 22:07:34.058585",
+    "natural_language_query": "How much did I spend last month?",
+    "sql_query": {
+      "query": "SELECT SUM(amount) AS total_spent FROM payments WHERE user_id = 'user_001' AND payment_date >= DATE_TRUNC('month', CURRENT_DATE - INTERVAL '1 month') AND payment_date < DATE_TRUNC('month', CURRENT_DATE);",
+      "query_type": "aggregate",
+      "complexity": "medium",
+      "tables_used": [
+        "payments"
+      ],
+      "columns_used": [
+        "payments.amount",
+        "payments.user_id",
+        "payments.payment_date"
+      ],
+      "has_aggregation": true,
+      "has_joins": false,
+      "estimated_rows": null,
+      "confidence_score": 0.95
+    },
+    "execution_result": {
+      "success": true,
+      "data": [
+        {
+          "total_spent": 5695.15
+        }
+      ],
+      "row_count": 1,
+      "execution_time_ms": 37.36996650695801,
+      "error_message": null,
+      "query_plan": {
+        "Plan": {
+          "Node Type": "Aggregate",
+          "Strategy": "Plain",
+          "Partial Mode": "Simple",
+          "Parallel Aware": false,
+          "Async Capable": false,
+          "Startup Cost": 37.5,
+          "Total Cost": 37.51,
+          "Plan Rows": 1,
+          "Plan Width": 32,
+          "Plans": [
+            {
+              "Node Type": "Bitmap Heap Scan",
+              "Parent Relationship": "Outer",
+              "Parallel Aware": false,
+              "Async Capable": false,
+              "Relation Name": "payments",
+              "Alias": "payments",
+              "Startup Cost": 5.15,
+              "Total Cost": 37.33,
+              "Plan Rows": 67,
+              "Plan Width": 6,
+              "Recheck Cond": "(((user_id)::text = 'user_001'::text) AND (payment_date >= date_trunc('month'::text, (CURRENT_DATE - '1 mon'::interval))) AND (payment_date < date_trunc('month'::text, (CURRENT_DATE)::timestamp with time zone)))",
+              "Plans": [
+                {
+                  "Node Type": "Bitmap Index Scan",
+                  "Parent Relationship": "Outer",
+                  "Parallel Aware": false,
+                  "Async Capable": false,
+                  "Index Name": "idx_payments_user_date",
+                  "Startup Cost": 0.0,
+                  "Total Cost": 5.13,
+                  "Plan Rows": 67,
+                  "Plan Width": 0,
+                  "Index Cond": "(((user_id)::text = 'user_001'::text) AND (payment_date >= date_trunc('month'::text, (CURRENT_DATE - '1 mon'::interval))) AND (payment_date < date_trunc('month'::text, (CURRENT_DATE)::timestamp with time zone)))"
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "data_quality_score": 1.0
+    },
+    "feedback_score": 4.5,
+    "human_feedback": "Query worked well!",
+    "system_metrics": {}
+  },
+  "3897d98a0ce1": {
+    "session_id": "3897d98a0ce1",
+    "user_id": null,
+    "timestamp": "2025-07-22 22:09:36.358327",
+    "natural_language_query": "What are the top 5 merchants by total revenue?",
+    "sql_query": {
+      "query": "SELECT m.merchant_name, SUM(p.amount) AS total_revenue FROM merchants m JOIN payments p ON m.merchant_id = p.merchant_id GROUP BY m.merchant_name ORDER BY total_revenue DESC LIMIT 5;",
+      "query_type": "ranking",
+      "complexity": "medium",
+      "tables_used": [
+        "merchants",
+        "payments"
+      ],
+      "columns_used": [
+        "merchants.merchant_name",
+        "payments.amount",
+        "merchants.merchant_id",
+        "payments.merchant_id"
+      ],
+      "has_aggregation": true,
+      "has_joins": true,
+      "estimated_rows": null,
+      "confidence_score": 0.95
+    },
+    "execution_result": {
+      "success": true,
+      "data": [
+        {
+          "merchant_name": "Apple Store",
+          "total_revenue": 68812.54
+        },
+        {
+          "merchant_name": "Best Buy",
+          "total_revenue": 41146.89
+        },
+        {
+          "merchant_name": "Costco",
+          "total_revenue": 20584.99
+        },
+        {
+          "merchant_name": "Amazon",
+          "total_revenue": 10170.23
+        },
+        {
+          "merchant_name": "Target",
+          "total_revenue": 9625.0
+        }
+      ],
+      "row_count": 5,
+      "execution_time_ms": 16.438961029052734,
+      "error_message": null,
+      "query_plan": {
+        "Plan": {
+          "Node Type": "Limit",
+          "Parallel Aware": false,
+          "Async Capable": false,
+          "Startup Cost": 82.48,
+          "Total Cost": 82.49,
+          "Plan Rows": 5,
+          "Plan Width": 548,
+          "Plans": [
+            {
+              "Node Type": "Sort",
+              "Parent Relationship": "Outer",
+              "Parallel Aware": false,
+              "Async Capable": false,
+              "Startup Cost": 82.48,
+              "Total Cost": 82.73,
+              "Plan Rows": 100,
+              "Plan Width": 548,
+              "Sort Key": [
+                "(sum(p.amount)) DESC"
+              ],
+              "Plans": [
+                {
+                  "Node Type": "Aggregate",
+                  "Strategy": "Hashed",
+                  "Partial Mode": "Simple",
+                  "Parent Relationship": "Outer",
+                  "Parallel Aware": false,
+                  "Async Capable": false,
+                  "Startup Cost": 79.57,
+                  "Total Cost": 80.82,
+                  "Plan Rows": 100,
+                  "Plan Width": 548,
+                  "Group Key": [
+                    "m.merchant_name"
+                  ],
+                  "Planned Partitions": 0,
+                  "Plans": [
+                    {
+                      "Node Type": "Hash Join",
+                      "Parent Relationship": "Outer",
+                      "Parallel Aware": false,
+                      "Async Capable": false,
+                      "Join Type": "Inner",
+                      "Startup Cost": 12.25,
+                      "Total Cost": 69.05,
+                      "Plan Rows": 2104,
+                      "Plan Width": 522,
+                      "Inner Unique": true,
+                      "Hash Cond": "(p.merchant_id = m.merchant_id)",
+                      "Plans": [
+                        {
+                          "Node Type": "Seq Scan",
+                          "Parent Relationship": "Outer",
+                          "Parallel Aware": false,
+                          "Async Capable": false,
+                          "Relation Name": "payments",
+                          "Alias": "p",
+                          "Startup Cost": 0.0,
+                          "Total Cost": 51.04,
+                          "Plan Rows": 2104,
+                          "Plan Width": 10
+                        },
+                        {
+                          "Node Type": "Hash",
+                          "Parent Relationship": "Inner",
+                          "Parallel Aware": false,
+                          "Async Capable": false,
+                          "Startup Cost": 11.0,
+                          "Total Cost": 11.0,
+                          "Plan Rows": 100,
+                          "Plan Width": 520,
+                          "Plans": [
+                            {
+                              "Node Type": "Seq Scan",
+                              "Parent Relationship": "Outer",
+                              "Parallel Aware": false,
+                              "Async Capable": false,
+                              "Relation Name": "merchants",
+                              "Alias": "m",
+                              "Startup Cost": 0.0,
+                              "Total Cost": 11.0,
+                              "Plan Rows": 100,
+                              "Plan Width": 520
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "data_quality_score": 1.0
+    },
+    "feedback_score": null,
+    "human_feedback": null,
+    "system_metrics": {}
+  }
+}
