@@ -1,19 +1,15 @@
 """
-Enhanced Multi-Table NL to SQL Agent - Working Version without LangGraph
-This implementation supports dynamic table selection based on query keywords.
+Enhanced Multi-Table NL to SQL Agent with LangGraph
+This implementation supports dynamic table selection based on query keywords and external input payloads.
 """
 
 import os
 from dotenv import load_dotenv
 import asyncio
 import logging
-from typing import Dict, Any, List, Optional, Tuple, Set
+from typing import Dict, Any, List, Optional, Tuple, Set, Union
 from datetime import datetime, timedelta
 import pandas as pd
-import matplotlib
-matplotlib.use('Agg')  # Set non-interactive backend before importing pyplot
-import matplotlib.pyplot as plt
-import seaborn as sns
 from sqlalchemy import create_engine, text, inspect
 from sqlalchemy.exc import SQLAlchemyError
 import openai
@@ -29,6 +25,42 @@ logger = logging.getLogger(__name__)
 # Database Configuration
 DATABASE_URL = "postgresql://nlsql_user:nlsql_password@localhost:5432/nlsql_db"
 
+class InputPayload(BaseModel):
+    """External input payload structure"""
+    model_config = ConfigDict(extra='allow')
+    
+    # Common financial identifiers
+    CIN: Optional[int] = Field(None, description="Customer Identification Number")
+    sort_code: Optional[int] = Field(None, description="Bank sort code")
+    account_number: Optional[int] = Field(None, description="Account number")
+    user_id: Optional[str] = Field(None, description="User identifier")
+    
+    # Additional fields allowed via extra='allow'
+    
+    def to_filter_conditions(self) -> Dict[str, Any]:
+        """Convert payload to SQL filter conditions"""
+        conditions = {}
+        
+        # Map payload fields to database columns
+        field_mapping = {
+            'CIN': 'customer_id',
+            'sort_code': 'sort_code', 
+            'account_number': 'account_number',
+            'user_id': 'user_id'
+        }
+        
+        for payload_field, db_field in field_mapping.items():
+            value = getattr(self, payload_field, None)
+            if value is not None:
+                conditions[db_field] = value
+        
+        # Handle additional fields
+        for field, value in self.__dict__.items():
+            if field not in field_mapping and value is not None:
+                conditions[field] = value
+                
+        return conditions
+
 class TableMapping:
     """Manages table mappings and keyword detection"""
     
@@ -39,31 +71,43 @@ class TableMapping:
                 'keywords': ['payment', 'pay', 'transaction', 'spend', 'spent', 'expense', 'cost', 'money', 'amount', 'purchase', 'buy', 'bought'],
                 'description': 'Payment transactions and spending data',
                 'primary_key': 'payment_id',
-                'user_column': 'user_id'
+                'user_column': 'user_id',
+                'payload_columns': ['customer_id', 'account_number', 'sort_code', 'user_id']
             },
             'categories': {
                 'keywords': ['category', 'categories', 'type', 'kind', 'group', 'classification', 'segment'],
                 'description': 'Spending categories and classifications',
                 'primary_key': 'category_id',
-                'user_column': None
+                'user_column': None,
+                'payload_columns': []
             },
             'merchants': {
                 'keywords': ['merchant', 'store', 'shop', 'vendor', 'retailer', 'business', 'company'],
                 'description': 'Merchant and store information',
                 'primary_key': 'merchant_id',
-                'user_column': None
+                'user_column': None,
+                'payload_columns': []
             },
             'users': {
                 'keywords': ['user', 'customer', 'account', 'profile', 'member'],
                 'description': 'User account information',
                 'primary_key': 'user_id',
-                'user_column': 'user_id'
+                'user_column': 'user_id',
+                'payload_columns': ['customer_id', 'user_id']
             },
             'budgets': {
                 'keywords': ['budget', 'limit', 'allowance', 'target', 'goal'],
                 'description': 'Budget limits and targets',
                 'primary_key': 'budget_id',
-                'user_column': 'user_id'
+                'user_column': 'user_id',
+                'payload_columns': ['user_id']
+            },
+            'accounts': {
+                'keywords': ['account', 'balance', 'statement', 'bank'],
+                'description': 'Bank account information',
+                'primary_key': 'account_id',
+                'user_column': 'user_id',
+                'payload_columns': ['account_number', 'sort_code', 'customer_id', 'user_id']
             }
         }
         
@@ -72,20 +116,31 @@ class TableMapping:
             ('payments', 'categories'): 'payments.category_id = categories.category_id',
             ('payments', 'merchants'): 'payments.merchant_id = merchants.merchant_id',
             ('payments', 'users'): 'payments.user_id = users.user_id',
+            ('payments', 'accounts'): 'payments.account_number = accounts.account_number',
             ('budgets', 'categories'): 'budgets.category_id = categories.category_id',
-            ('budgets', 'users'): 'budgets.user_id = users.user_id'
+            ('budgets', 'users'): 'budgets.user_id = users.user_id',
+            ('accounts', 'users'): 'accounts.user_id = users.user_id'
         }
     
-    def detect_relevant_tables(self, query: str) -> List[str]:
-        """Detect which tables are relevant based on query keywords"""
+    def detect_relevant_tables(self, query: str, payload: Optional[InputPayload] = None) -> List[str]:
+        """Detect which tables are relevant based on query keywords and payload"""
         query_lower = query.lower()
         relevant_tables = set()
         
+        # Detect tables based on keywords
         for table_name, table_info in self.table_keywords.items():
             for keyword in table_info['keywords']:
                 if keyword in query_lower:
                     relevant_tables.add(table_name)
                     break
+        
+        # Add tables based on payload fields
+        if payload:
+            payload_conditions = payload.to_filter_conditions()
+            for table_name, table_info in self.table_keywords.items():
+                payload_columns = table_info.get('payload_columns', [])
+                if any(col in payload_conditions for col in payload_columns):
+                    relevant_tables.add(table_name)
         
         # Default to payments if no specific table detected
         if not relevant_tables:
@@ -93,11 +148,12 @@ class TableMapping:
         
         # Add related tables based on context
         if 'payments' in relevant_tables:
-            # Check if we need category or merchant info
             if any(word in query_lower for word in ['category', 'type', 'kind']):
                 relevant_tables.add('categories')
             if any(word in query_lower for word in ['merchant', 'store', 'shop']):
                 relevant_tables.add('merchants')
+            if any(word in query_lower for word in ['account', 'balance']):
+                relevant_tables.add('accounts')
         
         return list(relevant_tables)
     
@@ -109,13 +165,58 @@ class TableMapping:
     def get_primary_table(self, tables: List[str]) -> str:
         """Determine the primary table for the query"""
         # Priority order for primary tables
-        priority = ['payments', 'budgets', 'users', 'categories', 'merchants']
+        priority = ['payments', 'accounts', 'budgets', 'users', 'categories', 'merchants']
         
         for table in priority:
             if table in tables:
                 return table
         
         return tables[0] if tables else 'payments'
+
+class AgentState(BaseModel):
+    """State object for the LangGraph agent with enhanced table support"""
+    model_config = ConfigDict(arbitrary_types_allowed=True, extra='allow')
+    
+    user_query: str = ""
+    input_payload: Optional[InputPayload] = None
+    user_id: Optional[str] = None
+    relevant_tables: List[str] = []
+    primary_table: str = ""
+    sql_query: str = ""
+    validation_result: Dict[str, Any] = {}
+    execution_result: Optional[pd.DataFrame] = None
+    formatted_data: Optional[Dict[str, Any]] = None
+    error_message: str = ""
+    retry_count: int = 0
+    schema_info: Dict[str, Any] = {}
+    
+    @field_validator('user_id', mode='before')
+    @classmethod
+    def convert_user_id_to_string(cls, v):
+        """Convert user_id to string if it's not None"""
+        if v is not None:
+            return str(v)
+        return v
+    
+    def __getitem__(self, key):
+        """Support dict-like access for LangGraph compatibility"""
+        return getattr(self, key)
+    
+    def __setitem__(self, key, value):
+        """Support dict-like assignment for LangGraph compatibility"""
+        setattr(self, key, value)
+    
+    def keys(self):
+        """Support dict-like keys() for LangGraph compatibility"""
+        return self.__dict__.keys()
+    
+    def items(self):
+        """Support dict-like items() for LangGraph compatibility"""
+        return self.__dict__.items()
+    
+    def get(self, key, default=None):
+        """Support dict-like get() for LangGraph compatibility"""
+        return getattr(self, key, default)
 
 class DatabaseManager:
     """Enhanced database manager with multi-table support"""
@@ -156,22 +257,42 @@ class DatabaseManager:
                 foreign_keys = inspector.get_foreign_keys(table_name)
                 indexes = inspector.get_indexes(table_name)
                 
-                schema_info[table_name] = {
-                    'columns': [
-                        {
-                            'name': col['name'],
-                            'type': str(col['type']),
-                            'nullable': col['nullable'],
+                # Process columns with safe attribute access
+                processed_columns = []
+                for col in columns:
+                    try:
+                        processed_col = {
+                            'name': col.get('name', 'unknown'),
+                            'type': str(col.get('type', 'UNKNOWN')),
+                            'nullable': col.get('nullable', True),
                             'primary_key': col.get('primary_key', False)
                         }
-                        for col in columns
-                    ],
-                    'foreign_keys': foreign_keys,
-                    'indexes': indexes,
+                        processed_columns.append(processed_col)
+                    except Exception as col_error:
+                        logger.warning(f"Error processing column in {table_name}: {col_error}")
+                        # Add a basic column entry
+                        processed_columns.append({
+                            'name': str(col.get('name', 'unknown')),
+                            'type': 'UNKNOWN',
+                            'nullable': True,
+                            'primary_key': False
+                        })
+                
+                schema_info[table_name] = {
+                    'columns': processed_columns,
+                    'foreign_keys': foreign_keys or [],
+                    'indexes': indexes or [],
                     'table_info': self.table_mapping.table_keywords.get(table_name, {})
                 }
             except Exception as e:
                 logger.warning(f"Could not get schema for table {table_name}: {e}")
+                # Add minimal schema info to prevent complete failure
+                schema_info[table_name] = {
+                    'columns': [{'name': 'id', 'type': 'INTEGER', 'nullable': False, 'primary_key': True}],
+                    'foreign_keys': [],
+                    'indexes': [],
+                    'table_info': self.table_mapping.table_keywords.get(table_name, {})
+                }
         
         return schema_info
     
@@ -243,7 +364,7 @@ class DatabaseManager:
         return validation_result
 
 class LLMService:
-    """Enhanced LLM service with multi-table support"""
+    """Enhanced LLM service with multi-table support and payload integration"""
     
     def __init__(self, api_key: str):
         # Simple OpenAI client initialization with error handling
@@ -267,14 +388,18 @@ class LLMService:
         
     def generate_sql(self, natural_query: str, schema_info: Dict[str, Any], 
                     relevant_tables: List[str], primary_table: str, 
-                    user_id: Optional[str] = None) -> str:
-        """Generate SQL query with multi-table awareness"""
+                    user_id: Optional[str] = None, 
+                    input_payload: Optional[InputPayload] = None) -> str:
+        """Generate SQL query with multi-table awareness and payload integration"""
         
         # Build comprehensive schema description
         schema_description = self._build_schema_description(schema_info, relevant_tables)
         
         # Build user context
         user_context = self._build_user_context(user_id, relevant_tables)
+        
+        # Build payload context
+        payload_context = self._build_payload_context(input_payload, relevant_tables)
         
         # Build table relationship context
         relationship_context = self._build_relationship_context(relevant_tables)
@@ -285,6 +410,8 @@ Database Schema:
 {schema_description}
 
 {user_context}
+
+{payload_context}
 
 {relationship_context}
 
@@ -301,27 +428,24 @@ CRITICAL Rules:
 5. Return ONLY the SQL query, no explanation or markdown
 6. Use PostgreSQL syntax
 7. NEVER use placeholder comments or template variables
-8. If user_id is provided, filter user-specific tables accordingly
+8. Apply payload filters as WHERE conditions when provided
 9. Generate complete, executable SQL with real values
 10. Choose the most appropriate table(s) based on the query intent
 
-Table Selection Guidelines:
-- For spending/payment queries: Use payments table
-- For category analysis: Join payments with categories
-- For merchant analysis: Join payments with merchants  
-- For user information: Use users table
-- For budget queries: Use budgets table
-- Always join related tables when additional context is needed
+Filtering Priority:
+1. Apply payload filters first (highest priority)
+2. Apply user_id filters for user-specific queries
+3. Apply query-based filters
 
 Date/Time Handling:
 - Use CURRENT_DATE for "today"
 - Use INTERVAL for relative dates (e.g., CURRENT_DATE - INTERVAL '1 month')
 - Format dates as YYYY-MM-DD
 
-Example Multi-table Queries:
-- SELECT c.category_name, SUM(p.amount) FROM payments p JOIN categories c ON p.category_id = c.category_id GROUP BY c.category_name
-- SELECT m.merchant_name, AVG(p.amount) FROM payments p JOIN merchants m ON p.merchant_id = m.merchant_id GROUP BY m.merchant_name
-- SELECT u.username, SUM(p.amount) FROM payments p JOIN users u ON p.user_id = u.user_id GROUP BY u.username
+Example Multi-table Queries with Filters:
+- SELECT c.category_name, SUM(p.amount) FROM payments p JOIN categories c ON p.category_id = c.category_id WHERE p.customer_id = 22 GROUP BY c.category_name
+- SELECT m.merchant_name, AVG(p.amount) FROM payments p JOIN merchants m ON p.merchant_id = m.merchant_id WHERE p.account_number = 900914 GROUP BY m.merchant_name
+- SELECT u.username, SUM(p.amount) FROM payments p JOIN users u ON p.user_id = u.user_id WHERE p.sort_code = 123456 GROUP BY u.username
 """
         
         try:
@@ -384,9 +508,9 @@ Example Multi-table Queries:
                 columns = []
                 for col in table_info['columns']:
                     col_desc = f"{col['name']} ({col['type']})"
-                    if col.get('primary_key'):
+                    if col.get('primary_key', False):
                         col_desc += " [PK]"
-                    if not col['nullable']:
+                    if not col.get('nullable', True):  # Use .get() with default
                         col_desc += " NOT NULL"
                     columns.append(col_desc)
                 
@@ -422,6 +546,39 @@ User Context:
 - Query all data without user-specific filtering
 """
     
+    def _build_payload_context(self, payload: Optional[InputPayload], relevant_tables: List[str]) -> str:
+        """Build payload context for filtering"""
+        if not payload:
+            return """
+Payload Context:
+- No external payload provided
+- No additional filtering required
+"""
+        
+        conditions = payload.to_filter_conditions()
+        if not conditions:
+            return """
+Payload Context:
+- Empty payload provided
+- No additional filtering required
+"""
+        
+        context = """
+Payload Context:
+- External payload provided with filters
+- MUST apply the following WHERE conditions:
+"""
+        
+        for field, value in conditions.items():
+            if isinstance(value, str):
+                context += f"  - {field} = '{value}'\n"
+            else:
+                context += f"  - {field} = {value}\n"
+        
+        context += "- These filters have HIGHEST PRIORITY and must be included in the query\n"
+        
+        return context
+    
     def _build_relationship_context(self, relevant_tables: List[str]) -> str:
         """Build context about table relationships"""
         if len(relevant_tables) <= 1:
@@ -441,301 +598,338 @@ Table Relationships:
 """
         return ""
 
-class VisualizationService:
-    """Enhanced visualization service with multi-table support"""
+class DataFormatter:
+    """Formats query results for external visualization systems"""
     
-    def __init__(self):
-        import matplotlib
-        matplotlib.use('Agg')
-        plt.style.use('seaborn-v0_8')
-        
-    def create_visualization(self, data: pd.DataFrame, query: str, 
-                           relevant_tables: List[str]) -> Optional[str]:
-        """Create visualization with table-aware styling"""
+    @staticmethod
+    def format_for_visualization(data: pd.DataFrame, query_info: Dict[str, Any]) -> Dict[str, Any]:
+        """Format DataFrame for external visualization applications"""
         
         if data.empty:
-            return None
-            
-        try:
-            import warnings
-            with warnings.catch_warnings():
-                warnings.filterwarnings("ignore", category=UserWarning)
-                
-                fig, ax = plt.subplots(figsize=(12, 8))
-                
-                # Enhanced visualization based on table context
-                chart_created = self._create_context_aware_chart(data, ax, relevant_tables, query)
-                
-                if not chart_created:
-                    # Fallback to generic visualization
-                    self._create_generic_chart(data, ax)
-                
-                plt.xticks(rotation=45)
-                plt.tight_layout()
-                
-                # Save with timestamp
-                timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-                filename = f"visualization_{timestamp}.png"
-                filepath = os.path.join("outputs", filename)
-                
-                os.makedirs("outputs", exist_ok=True)
-                plt.savefig(filepath, dpi=300, bbox_inches='tight')
-                plt.close()
-                
-                return filepath
-                
-        except Exception as e:
-            logger.error(f"Visualization creation failed: {e}")
-            plt.close('all')
-            return None
-    
-    def _create_context_aware_chart(self, data: pd.DataFrame, ax, 
-                                   relevant_tables: List[str], query: str) -> bool:
-        """Create chart based on table context"""
+            return {
+                'status': 'success',
+                'data': [],
+                'metadata': {
+                    'row_count': 0,
+                    'column_count': 0,
+                    'columns': [],
+                    'query_info': query_info
+                }
+            }
         
-        # Category-based visualizations
-        if 'categories' in relevant_tables:
-            return self._create_category_chart(data, ax)
+        # Convert DataFrame to visualization-friendly format
+        formatted_data = {
+            'status': 'success',
+            'data': data.to_dict('records'),
+            'metadata': {
+                'row_count': len(data),
+                'column_count': len(data.columns),
+                'columns': [
+                    {
+                        'name': col,
+                        'type': str(data[col].dtype),
+                        'sample_values': data[col].dropna().head(3).tolist()
+                    }
+                    for col in data.columns
+                ],
+                'query_info': query_info,
+                'suggested_charts': DataFormatter._suggest_chart_types(data)
+            }
+        }
         
-        # Merchant-based visualizations  
-        elif 'merchants' in relevant_tables:
-            return self._create_merchant_chart(data, ax)
+        return formatted_data
+    
+    @staticmethod
+    def _suggest_chart_types(data: pd.DataFrame) -> List[str]:
+        """Suggest appropriate chart types based on data characteristics"""
+        suggestions = []
         
-        # User-based visualizations
-        elif 'users' in relevant_tables and len(data) > 1:
-            return self._create_user_chart(data, ax)
-        
-        # Budget visualizations
-        elif 'budgets' in relevant_tables:
-            return self._create_budget_chart(data, ax)
-        
-        return False
-    
-    def _create_category_chart(self, data: pd.DataFrame, ax) -> bool:
-        """Create category-specific visualization"""
-        if 'category_name' in data.columns and len(data) <= 20:
-            numeric_cols = data.select_dtypes(include=['number']).columns
-            if len(numeric_cols) >= 1:
-                data.plot(x='category_name', y=numeric_cols[0], kind='bar', ax=ax, color='skyblue')
-                ax.set_title(f"{numeric_cols[0]} by Category")
-                ax.set_xlabel("Category")
-                return True
-        return False
-    
-    def _create_merchant_chart(self, data: pd.DataFrame, ax) -> bool:
-        """Create merchant-specific visualization"""
-        if 'merchant_name' in data.columns and len(data) <= 15:
-            numeric_cols = data.select_dtypes(include=['number']).columns
-            if len(numeric_cols) >= 1:
-                # Sort by value for better visualization
-                sorted_data = data.nlargest(10, numeric_cols[0])
-                sorted_data.plot(x='merchant_name', y=numeric_cols[0], kind='barh', ax=ax, color='lightcoral')
-                ax.set_title(f"Top Merchants by {numeric_cols[0]}")
-                ax.set_xlabel(numeric_cols[0])
-                return True
-        return False
-    
-    def _create_user_chart(self, data: pd.DataFrame, ax) -> bool:
-        """Create user-specific visualization"""
-        if 'username' in data.columns or 'user_id' in data.columns:
-            user_col = 'username' if 'username' in data.columns else 'user_id'
-            numeric_cols = data.select_dtypes(include=['number']).columns
-            if len(numeric_cols) >= 1 and len(data) <= 20:
-                data.plot(x=user_col, y=numeric_cols[0], kind='bar', ax=ax, color='lightgreen')
-                ax.set_title(f"{numeric_cols[0]} by User")
-                return True
-        return False
-    
-    def _create_budget_chart(self, data: pd.DataFrame, ax) -> bool:
-        """Create budget-specific visualization"""
-        # Look for budget vs actual comparisons
-        if 'budget_amount' in data.columns and 'actual_amount' in data.columns:
-            categories = data.get('category_name', range(len(data)))
-            x = range(len(data))
-            width = 0.35
-            
-            ax.bar([i - width/2 for i in x], data['budget_amount'], width, label='Budget', color='lightblue')
-            ax.bar([i + width/2 for i in x], data['actual_amount'], width, label='Actual', color='lightcoral')
-            
-            ax.set_xlabel('Categories')
-            ax.set_ylabel('Amount')
-            ax.set_title('Budget vs Actual Spending')
-            ax.set_xticks(x)
-            ax.set_xticklabels(categories, rotation=45)
-            ax.legend()
-            return True
-        return False
-    
-    def _create_generic_chart(self, data: pd.DataFrame, ax):
-        """Fallback generic chart creation"""
         numeric_cols = data.select_dtypes(include=['number']).columns
         categorical_cols = data.select_dtypes(include=['object', 'category']).columns
+        date_cols = data.select_dtypes(include=['datetime']).columns
         
-        if len(numeric_cols) >= 1 and len(categorical_cols) >= 1 and len(data) <= 20:
-            data.plot(x=categorical_cols[0], y=numeric_cols[0], kind='bar', ax=ax)
-            ax.set_title(f"{numeric_cols[0]} by {categorical_cols[0]}")
-        elif len(numeric_cols) >= 2:
-            ax.scatter(data[numeric_cols[0]], data[numeric_cols[1]])
-            ax.set_xlabel(numeric_cols[0])
-            ax.set_ylabel(numeric_cols[1])
-            ax.set_title(f"{numeric_cols[1]} vs {numeric_cols[0]}")
-        elif len(numeric_cols) == 1:
-            data[numeric_cols[0]].hist(ax=ax, bins=20)
-            ax.set_title(f"Distribution of {numeric_cols[0]}")
-        else:
-            # Show as table
-            ax.axis('tight')
-            ax.axis('off')
-            table_data = data.head(10)
-            table = ax.table(cellText=table_data.values,
-                           colLabels=table_data.columns,
-                           cellLoc='center',
-                           loc='center')
-            table.auto_set_font_size(False)
-            table.set_fontsize(8)
-            ax.set_title("Query Results")
+        # Chart type suggestions based on data structure
+        if len(categorical_cols) >= 1 and len(numeric_cols) >= 1:
+            if len(data) <= 20:
+                suggestions.extend(['bar_chart', 'horizontal_bar_chart'])
+            else:
+                suggestions.extend(['pie_chart', 'donut_chart'])
+        
+        if len(numeric_cols) >= 2:
+            suggestions.extend(['scatter_plot', 'bubble_chart'])
+        
+        if len(date_cols) >= 1 and len(numeric_cols) >= 1:
+            suggestions.extend(['line_chart', 'area_chart'])
+        
+        if len(numeric_cols) == 1:
+            suggestions.extend(['histogram', 'box_plot'])
+        
+        # Default suggestions
+        if not suggestions:
+            suggestions = ['table', 'bar_chart']
+        
+        return suggestions
 
 class NLToSQLAgent:
-    """Simplified agent without LangGraph"""
+    """Enhanced agent with LangGraph workflow"""
     
     def __init__(self, database_url: str, openai_api_key: str):
         self.db_manager = DatabaseManager(database_url)
         self.llm_service = LLMService(openai_api_key)
-        self.viz_service = VisualizationService()
         self.table_mapping = TableMapping()
+        self.data_formatter = DataFormatter()
+        self.graph = None
+        self.setup_graph()
         
-    async def process_query(self, user_query: str, user_id: Optional[str] = None) -> Dict[str, Any]:
-        """Process a natural language query through the simplified agent"""
+    def setup_graph(self):
+        """Setup the LangGraph workflow using latest API"""
+        from langgraph.graph import StateGraph, START, END
         
+        # Create workflow with state type
+        workflow = StateGraph(AgentState)
+        
+        # Add all nodes
+        workflow.add_node("analyze_query", self.analyze_query_node)
+        workflow.add_node("get_schema", self.get_schema_node)
+        workflow.add_node("generate_sql", self.generate_sql_node)
+        workflow.add_node("validate_sql", self.validate_sql_node)
+        workflow.add_node("execute_sql", self.execute_sql_node)
+        workflow.add_node("format_results", self.format_results_node)
+        workflow.add_node("handle_error", self.handle_error_node)
+        
+        # Add edges using latest API
+        workflow.add_edge(START, "analyze_query")
+        workflow.add_edge("analyze_query", "get_schema")
+        workflow.add_edge("get_schema", "generate_sql")
+        workflow.add_edge("generate_sql", "validate_sql")
+        workflow.add_edge("execute_sql", "format_results")
+        workflow.add_edge("format_results", END)
+        workflow.add_edge("handle_error", END)
+        
+        # Add conditional edge with proper routing
+        def validation_router(state: AgentState) -> str:
+            """Route after SQL validation"""
+            if state.error_message:
+                return "handle_error"
+            
+            if not state.validation_result.get('is_valid', False):
+                if state.retry_count < 2:
+                    state.retry_count += 1
+                    return "generate_sql"
+                else:
+                    state.error_message = f"Max retries reached. Validation errors: {state.validation_result.get('errors', [])}"
+                    return "handle_error"
+            
+            return "execute_sql"
+        
+        # Add conditional edges
+        workflow.add_conditional_edges(
+            "validate_sql",
+            validation_router,
+            {
+                "generate_sql": "generate_sql",
+                "execute_sql": "execute_sql",
+                "handle_error": "handle_error"
+            }
+        )
+        
+        # Compile the graph
+        self.graph = workflow.compile()
+        logger.info("LangGraph workflow compiled successfully with latest API")
+    
+    def analyze_query_node(self, state: AgentState) -> AgentState:
+        """Analyze query to determine relevant tables"""
         try:
-            # Step 1: Analyze query
-            relevant_tables = self.table_mapping.detect_relevant_tables(user_query)
+            relevant_tables = self.table_mapping.detect_relevant_tables(
+                state.user_query, 
+                state.input_payload
+            )
             primary_table = self.table_mapping.get_primary_table(relevant_tables)
             
+            state.relevant_tables = relevant_tables
+            state.primary_table = primary_table
+            
             logger.info(f"Query analysis - Primary: {primary_table}, Relevant: {relevant_tables}")
-            
-            # Step 2: Get schema
-            schema_info = self.db_manager.get_schema_info(relevant_tables)
+        except Exception as e:
+            state.error_message = f"Query analysis error: {str(e)}"
+            logger.error(state.error_message)
+        
+        return state
+    
+    def get_schema_node(self, state: AgentState) -> AgentState:
+        """Get schema information for relevant tables"""
+        try:
+            schema_info = self.db_manager.get_schema_info(state.relevant_tables)
+            state.schema_info = schema_info
             logger.info(f"Schema retrieved for tables: {list(schema_info.keys())}")
-            
-            # Step 3: Generate SQL with retries
-            max_retries = 2
-            sql_query = None
-            validation_result = None
-            
-            for attempt in range(max_retries + 1):
-                try:
-                    sql_query = self.llm_service.generate_sql(
-                        user_query, schema_info, relevant_tables, primary_table, user_id
-                    )
-                    logger.info(f"Generated SQL (attempt {attempt + 1}): {sql_query}")
-                    
-                    # Step 4: Validate
-                    validation_result = self.db_manager.validate_query(sql_query, schema_info)
-                    logger.info(f"SQL validation result: {validation_result}")
-                    
-                    if validation_result.get('is_valid', False):
-                        break
-                    elif attempt < max_retries:
-                        logger.info(f"Retrying SQL generation (attempt {attempt + 2})")
-                    else:
-                        return {
-                            'query': user_query,
-                            'user_id': user_id,
-                            'relevant_tables': relevant_tables,
-                            'primary_table': primary_table,
-                            'sql_query': sql_query,
-                            'success': False,
-                            'error_message': f"Max retries reached. Validation errors: {validation_result.get('errors', [])}",
-                            'data': None,
-                            'visualization_path': None,
-                            'row_count': 0
-                        }
-                except Exception as e:
-                    if attempt < max_retries:
-                        logger.warning(f"SQL generation attempt {attempt + 1} failed: {e}")
-                        continue
-                    else:
-                        return {
-                            'query': user_query,
-                            'user_id': user_id,
-                            'relevant_tables': relevant_tables,
-                            'primary_table': primary_table,
-                            'sql_query': '',
-                            'success': False,
-                            'error_message': f"SQL generation failed: {str(e)}",
-                            'data': None,
-                            'visualization_path': None,
-                            'row_count': 0
-                        }
-            
-            # Step 5: Execute SQL
-            try:
-                result_df = self.db_manager.execute_query(sql_query)
-                logger.info(f"SQL executed successfully, {len(result_df)} rows returned")
-            except Exception as e:
-                return {
-                    'query': user_query,
-                    'user_id': user_id,
-                    'relevant_tables': relevant_tables,
-                    'primary_table': primary_table,
-                    'sql_query': sql_query,
-                    'success': False,
-                    'error_message': f"SQL execution error: {str(e)}",
-                    'data': None,
-                    'visualization_path': None,
-                    'row_count': 0
+        except Exception as e:
+            state.error_message = f"Schema retrieval error: {str(e)}"
+            logger.error(state.error_message)
+        
+        return state
+    
+    def generate_sql_node(self, state: AgentState) -> AgentState:
+        """Generate SQL with multi-table awareness and payload integration"""
+        try:
+            sql_query = self.llm_service.generate_sql(
+                state.user_query,
+                state.schema_info,
+                state.relevant_tables,
+                state.primary_table,
+                state.user_id,
+                state.input_payload
+            )
+            state.sql_query = sql_query
+            logger.info(f"Generated SQL: {sql_query}")
+        except Exception as e:
+            state.error_message = f"SQL generation error: {str(e)}"
+            logger.error(state.error_message)
+        
+        return state
+    
+    def validate_sql_node(self, state: AgentState) -> AgentState:
+        """Validate the generated SQL"""
+        try:
+            validation_result = self.db_manager.validate_query(state.sql_query, state.schema_info)
+            state.validation_result = validation_result
+            logger.info(f"SQL validation result: {validation_result}")
+        except Exception as e:
+            state.error_message = f"SQL validation error: {str(e)}"
+            logger.error(state.error_message)
+        
+        return state
+    
+    def execute_sql_node(self, state: AgentState) -> AgentState:
+        """Execute the validated SQL query"""
+        try:
+            result_df = self.db_manager.execute_query(state.sql_query)
+            state.execution_result = result_df
+            logger.info(f"SQL executed successfully, {len(result_df)} rows returned")
+        except Exception as e:
+            state.error_message = f"SQL execution error: {str(e)}"
+            logger.error(state.error_message)
+        
+        return state
+    
+    def format_results_node(self, state: AgentState) -> AgentState:
+        """Format results for external visualization"""
+        try:
+            if state.execution_result is not None:
+                query_info = {
+                    'query': state.user_query,
+                    'sql_query': state.sql_query,
+                    'relevant_tables': state.relevant_tables,
+                    'primary_table': state.primary_table,
+                    'user_id': state.user_id,
+                    'input_payload': state.input_payload.dict() if state.input_payload else None
                 }
+                
+                formatted_data = self.data_formatter.format_for_visualization(
+                    state.execution_result, 
+                    query_info
+                )
+                state.formatted_data = formatted_data
+                logger.info(f"Results formatted for visualization: {len(state.execution_result)} rows")
+            else:
+                state.formatted_data = {
+                    'status': 'success',
+                    'data': [],
+                    'metadata': {
+                        'row_count': 0,
+                        'column_count': 0,
+                        'columns': [],
+                        'query_info': {
+                            'query': state.user_query,
+                            'sql_query': state.sql_query
+                        }
+                    }
+                }
+                logger.info("No data to format")
+        except Exception as e:
+            state.error_message = f"Data formatting error: {str(e)}"
+            logger.error(state.error_message)
+        
+        return state
+    
+    def handle_error_node(self, state: AgentState) -> AgentState:
+        """Handle errors in the workflow"""
+        logger.error(f"Workflow error: {state.error_message}")
+        return state
+    
+    async def process_query(self, user_query: str, user_id: Optional[str] = None, 
+                          input_payload: Optional[Union[Dict[str, Any], InputPayload]] = None) -> Dict[str, Any]:
+        """Process a natural language query through the LangGraph agent"""
+        
+        # Convert input_payload to InputPayload if it's a dict
+        if isinstance(input_payload, dict):
+            input_payload = InputPayload(**input_payload)
+        
+        initial_state = AgentState(
+            user_query=user_query, 
+            user_id=user_id,
+            input_payload=input_payload
+        )
+        
+        try:
+            # Run the LangGraph workflow
+            result = await self.graph.ainvoke(initial_state)
             
-            # Step 6: Create visualization
-            viz_path = None
-            try:
-                if result_df is not None and not result_df.empty:
-                    viz_path = self.viz_service.create_visualization(
-                        result_df, user_query, relevant_tables
-                    )
-                    if viz_path:
-                        logger.info(f"Visualization created: {viz_path}")
+            # Debug: Print the type and structure of the result
+            logger.debug(f"LangGraph result type: {type(result)}")
+            logger.debug(f"LangGraph result keys: {list(result.keys()) if hasattr(result, 'keys') else 'No keys'}")
+            
+            # Safely extract values from the result
+            def safe_get(obj, key, default=None):
+                """Safely get value from object, whether it's dict-like or has attributes"""
+                try:
+                    if hasattr(obj, key):
+                        return getattr(obj, key, default)
+                    elif hasattr(obj, '__getitem__'):
+                        return obj.get(key, default) if hasattr(obj, 'get') else obj[key]
                     else:
-                        logger.info("No visualization created")
-                else:
-                    logger.info("No data to visualize")
-            except Exception as e:
-                # Don't fail the entire process for visualization errors
-                logger.warning(f"Visualization error: {str(e)}")
+                        return default
+                except (KeyError, AttributeError, TypeError):
+                    return default
             
-            # Success response
-            return {
+            # Format response using safe extraction
+            response = {
                 'query': user_query,
                 'user_id': user_id,
-                'relevant_tables': relevant_tables,
-                'primary_table': primary_table,
-                'sql_query': sql_query,
-                'success': True,
-                'error_message': '',
-                'data': result_df.to_dict('records') if result_df is not None else None,
-                'visualization_path': viz_path,
-                'row_count': len(result_df) if result_df is not None else 0
+                'input_payload': input_payload.dict() if input_payload else None,
+                'relevant_tables': safe_get(result, 'relevant_tables', []),
+                'primary_table': safe_get(result, 'primary_table', ''),
+                'sql_query': safe_get(result, 'sql_query', ''),
+                'success': not bool(safe_get(result, 'error_message', '')),
+                'error_message': safe_get(result, 'error_message', ''),
+                'formatted_data': safe_get(result, 'formatted_data', None),
+                'row_count': 0
             }
             
+            # Calculate row count safely
+            execution_result = safe_get(result, 'execution_result', None)
+            if execution_result is not None and hasattr(execution_result, '__len__'):
+                response['row_count'] = len(execution_result)
+            
+            return response
+            
         except Exception as e:
-            logger.error(f"Unexpected error in process_query: {e}")
+            logger.error(f"Error during query processing: {e}")
             return {
                 'query': user_query,
                 'user_id': user_id,
+                'input_payload': input_payload.dict() if input_payload else None,
                 'relevant_tables': [],
                 'primary_table': '',
                 'sql_query': '',
                 'success': False,
-                'error_message': f"Unexpected error: {str(e)}",
-                'data': None,
-                'visualization_path': None,
+                'error_message': f"Processing error: {str(e)}",
+                'formatted_data': None,
                 'row_count': 0
             }
 
-# Enhanced application interface with multi-table support
+# Enhanced application interface with payload support
 class NLToSQLApp:
-    """Enhanced application interface with multi-table support"""
+    """Enhanced application interface with multi-table support and payload integration"""
     
     def __init__(self):
         self.agent = None
@@ -761,9 +955,10 @@ class NLToSQLApp:
         # Get available users
         self.available_users = self.agent.db_manager.get_user_list()
         
-        print("✅ Enhanced Multi-Table NL to SQL Agent initialized!")
+        print("✅ Enhanced Multi-Table NL to SQL Agent with LangGraph initialized!")
         print("📊 Database connected")
         print("🤖 LLM service ready")
+        print("🔄 LangGraph workflow compiled")
         print(f"👥 Found {len(self.available_users)} users in database")
         print(f"🏛️  Supported tables: {', '.join(self.table_mapping.table_keywords.keys())}")
         print("\n" + "="*60)
@@ -804,6 +999,79 @@ class NLToSQLApp:
             except (ValueError, KeyboardInterrupt):
                 print("❌ Invalid input")
     
+    def parse_payload_input(self, user_input: str) -> Optional[InputPayload]:
+        """Parse payload from user input with improved JSON handling"""
+        try:
+            # Look for JSON-like input (both single and double quotes)
+            if '{' in user_input and '}' in user_input:
+                json_start = user_input.find('{')
+                json_end = user_input.rfind('}') + 1
+                json_str = user_input[json_start:json_end]
+                
+                # Try to parse as-is first (in case it's already valid JSON)
+                try:
+                    payload_dict = json.loads(json_str)
+                    return InputPayload(**payload_dict)
+                except json.JSONDecodeError:
+                    # If that fails, try to fix common issues
+                    # Replace single quotes with double quotes for JSON compatibility
+                    fixed_json = json_str.replace("'", '"')
+                    
+                    try:
+                        payload_dict = json.loads(fixed_json)
+                        return InputPayload(**payload_dict)
+                    except json.JSONDecodeError:
+                        # Try using ast.literal_eval for Python-style dictionaries
+                        import ast
+                        try:
+                            payload_dict = ast.literal_eval(json_str)
+                            return InputPayload(**payload_dict)
+                        except (ValueError, SyntaxError):
+                            # Last resort: try to manually parse simple cases
+                            return self._manual_parse_payload(json_str)
+                            
+        except Exception as e:
+            logger.debug(f"Could not parse payload: {e}")
+        
+        return None
+    
+    def _manual_parse_payload(self, json_str: str) -> Optional[InputPayload]:
+        """Manually parse simple payload patterns"""
+        try:
+            # Remove outer braces and split by comma
+            content = json_str.strip('{}').strip()
+            pairs = content.split(',')
+            
+            payload_dict = {}
+            for pair in pairs:
+                if ':' in pair:
+                    key, value = pair.split(':', 1)
+                    # Clean up key and value
+                    key = key.strip().strip('"\'')
+                    value = value.strip().strip('"\'')
+                    
+                    # Try to convert value to appropriate type
+                    try:
+                        # Try integer first
+                        if value.isdigit():
+                            payload_dict[key] = int(value)
+                        # Try float
+                        elif '.' in value and value.replace('.', '').isdigit():
+                            payload_dict[key] = float(value)
+                        # Keep as string
+                        else:
+                            payload_dict[key] = value
+                    except:
+                        payload_dict[key] = value
+            
+            if payload_dict:
+                return InputPayload(**payload_dict)
+                
+        except Exception as e:
+            logger.debug(f"Manual parsing failed: {e}")
+        
+        return None
+    
     def show_table_info(self):
         """Display information about available tables"""
         print("\n🏛️  Available Tables and Keywords:")
@@ -817,18 +1085,24 @@ class NLToSQLApp:
                 print(f"   User-specific: Yes ({table_info['user_column']})")
             else:
                 print(f"   User-specific: No")
+            
+            payload_cols = table_info.get('payload_columns', [])
+            if payload_cols:
+                print(f"   Payload columns: {', '.join(payload_cols)}")
         
         print("\n💡 Tips:")
         print("   - Use keywords in your questions to target specific tables")
         print("   - The agent will automatically join related tables when needed")
         print("   - Questions with 'I', 'my', 'me' will use your selected user context")
+        print("   - Include JSON payload like: {'CIN': 22, 'account_number': 900914}")
         print("="*60)
     
     def run_interactive(self):
         """Run enhanced interactive command-line interface"""
-        print("🚀 Enhanced Multi-Table NL to SQL Agent")
+        print("🚀 Enhanced Multi-Table NL to SQL Agent with LangGraph")
         print("Ask questions about your financial data across multiple tables!")
-        print("Type 'quit' to exit, 'help' for examples, 'tables' for table info, 'user' to change user\n")
+        print("Type 'quit' to exit, 'help' for examples, 'tables' for table info, 'user' to change user")
+        print("Include JSON payload for filtering: {'CIN': 22, 'sort_code': 123456}\n")
         
         # Initial user selection
         if self.available_users:
@@ -861,8 +1135,17 @@ class NLToSQLApp:
                 
                 print("🤔 Analyzing query and determining relevant tables...")
                 
-                # Process the query with current user context
-                result = asyncio.run(self.agent.process_query(user_input, self.current_user_id))
+                # Parse payload from input
+                payload = self.parse_payload_input(user_input)
+                if payload:
+                    print(f"📦 Detected payload: {payload.dict()}")
+                
+                # Process the query with current user context and payload
+                result = asyncio.run(self.agent.process_query(
+                    user_input, 
+                    self.current_user_id,
+                    payload
+                ))
                 
                 # Display results
                 self.display_results(result)
@@ -874,7 +1157,7 @@ class NLToSQLApp:
                 print(f"❌ Error: {str(e)}")
     
     def show_examples(self):
-        """Show enhanced example queries for different tables"""
+        """Show enhanced example queries with payload examples"""
         examples = {
             "💳 Payment Queries": [
                 "How much did I spend last month?",
@@ -911,6 +1194,13 @@ class NLToSQLApp:
                 "Which users spend most on food category?",
                 "Compare budget vs actual spending by category",
                 "Show merchant performance across all users"
+            ],
+            "📦 Payload Examples (use either format)": [
+                'Show payments {"CIN": 22, "sort_code": 123456}',
+                "Show payments {'CIN': 22, 'sort_code': 123456}",
+                'Account balance {"account_number": 900914}',
+                "Transaction history {'CIN': 22, 'account_number': 900914}",
+                'User spending {"user_id": "user_001"}'
             ]
         }
         
@@ -923,10 +1213,13 @@ class NLToSQLApp:
                 print(f"   {i}. {question}")
         
         print(f"\n💡 The agent automatically detects which tables to use based on your keywords!")
+        print("📦 Payload formats supported:")
+        print('   - JSON style: {"CIN": 22, "sort_code": 123456}')
+        print("   - Python style: {'CIN': 22, 'sort_code': 123456}")
         print("="*60)
     
     def display_results(self, result: Dict[str, Any]):
-        """Display enhanced query results with table information"""
+        """Display enhanced query results with formatted data"""
         print("\n" + "="*60)
         
         if not result['success']:
@@ -939,25 +1232,34 @@ class NLToSQLApp:
         else:
             print(f"🌍 User Context: All users")
         
+        if result['input_payload']:
+            print(f"📦 Input Payload: {result['input_payload']}")
+        
         print(f"🏛️  Primary Table: {result['primary_table']}")
         print(f"🔗 Relevant Tables: {', '.join(result['relevant_tables'])}")
         print(f"📝 Generated SQL: {result['sql_query']}")
         print(f"📊 Rows returned: {result['row_count']}")
         
-        if result['data']:
-            print("\n📋 Results:")
-            df = pd.DataFrame(result['data'])
+        if result['formatted_data'] and result['formatted_data']['data']:
+            print("\n📋 Formatted Results:")
+            formatted_data = result['formatted_data']
             
-            # Limit display for large results
-            if len(df) > 10:
-                print(df.head(10).to_string(index=False))
-                print(f"\n... and {len(df) - 10} more rows")
+            # Display metadata
+            metadata = formatted_data['metadata']
+            print(f"   Columns: {metadata['column_count']}")
+            print(f"   Suggested charts: {', '.join(metadata['suggested_charts'])}")
+            
+            # Display sample data
+            data = formatted_data['data']
+            if len(data) <= 10:
+                df = pd.DataFrame(data)
+                print(f"\n{df.to_string(index=False)}")
             else:
-                print(df.to_string(index=False))
-        
-        if result['visualization_path']:
-            print(f"\n📈 Visualization saved: {result['visualization_path']}")
-            print("   Open the file to view the chart!")
+                df = pd.DataFrame(data[:10])
+                print(f"\n{df.to_string(index=False)}")
+                print(f"\n... and {len(data) - 10} more rows")
+            
+            print(f"\n📊 Data ready for external visualization system")
         
         print("\n" + "="*60)
 
@@ -973,7 +1275,7 @@ def main():
         print("1. Set OPENAI_API_KEY environment variable")
         print("2. PostgreSQL running with the test database")
         print("3. Installed all required dependencies")
-        print("4. Database tables exist (payments, categories, merchants, users, budgets)")
+        print("4. Database tables exist (payments, categories, merchants, users, budgets, accounts)")
 
 if __name__ == "__main__":
     main()
