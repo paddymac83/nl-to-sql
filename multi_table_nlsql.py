@@ -218,6 +218,212 @@ class AgentState(BaseModel):
         """Support dict-like get() for LangGraph compatibility"""
         return getattr(self, key, default)
 
+class QueryResultStorage:
+    """Handles storing query results in PostgreSQL database"""
+    
+    def __init__(self, database_manager):
+        self.db_manager = database_manager
+        self.table_name = "query_results"
+        self._ensure_results_table_exists()
+    
+    def _ensure_results_table_exists(self):
+        """Create query_results table if it doesn't exist"""
+        create_table_sql = """
+        CREATE TABLE IF NOT EXISTS query_results (
+            result_id SERIAL PRIMARY KEY,
+            user_id VARCHAR(50),
+            user_query TEXT NOT NULL,
+            input_payload JSONB,
+            sql_query TEXT,
+            relevant_tables TEXT[],
+            primary_table VARCHAR(100),
+            success BOOLEAN NOT NULL,
+            error_message TEXT,
+            result_data JSONB,
+            formatted_data JSONB,
+            row_count INTEGER DEFAULT 0,
+            execution_time_ms INTEGER,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            session_id VARCHAR(100),
+            query_hash VARCHAR(64)
+        );
+        
+        -- Create indexes for better performance
+        CREATE INDEX IF NOT EXISTS idx_query_results_user_id ON query_results(user_id);
+        CREATE INDEX IF NOT EXISTS idx_query_results_created_at ON query_results(created_at);
+        CREATE INDEX IF NOT EXISTS idx_query_results_success ON query_results(success);
+        CREATE INDEX IF NOT EXISTS idx_query_results_query_hash ON query_results(query_hash);
+        CREATE INDEX IF NOT EXISTS idx_query_results_session_id ON query_results(session_id);
+        """
+        
+        try:
+            if not self.db_manager.engine:
+                self.db_manager.connect()
+            
+            with self.db_manager.engine.connect() as connection:
+                connection.execute(text(create_table_sql))
+                connection.commit()
+                logger.info("Query results table ensured to exist")
+        except Exception as e:
+            logger.warning(f"Could not create query_results table: {e}")
+    
+    def store_query_result(self, result: Dict[str, Any], execution_time_ms: int = 0, 
+                          session_id: Optional[str] = None) -> Optional[int]:
+        """Store query result in database and return the result_id"""
+        try:
+            if not self.db_manager.engine:
+                self.db_manager.connect()
+            
+            # Generate query hash for deduplication/caching
+            import hashlib
+            query_content = f"{result.get('query', '')}{result.get('user_id', '')}{result.get('input_payload', '')}"
+            query_hash = hashlib.sha256(query_content.encode()).hexdigest()
+            
+            # Prepare data for storage
+            insert_data = {
+                'user_id': result.get('user_id'),
+                'user_query': result.get('query', ''),
+                'input_payload': json.dumps(result.get('input_payload')) if result.get('input_payload') else None,
+                'sql_query': result.get('sql_query', ''),
+                'relevant_tables': result.get('relevant_tables', []),
+                'primary_table': result.get('primary_table', ''),
+                'success': result.get('success', False),
+                'error_message': result.get('error_message', '') if result.get('error_message') else None,
+                'result_data': json.dumps(result.get('formatted_data', {}).get('data', [])) if result.get('formatted_data') else None,
+                'formatted_data': json.dumps(result.get('formatted_data')) if result.get('formatted_data') else None,
+                'row_count': result.get('row_count', 0),
+                'execution_time_ms': execution_time_ms,
+                'session_id': session_id,
+                'query_hash': query_hash
+            }
+            
+            insert_sql = """
+            INSERT INTO query_results (
+                user_id, user_query, input_payload, sql_query, relevant_tables, 
+                primary_table, success, error_message, result_data, formatted_data,
+                row_count, execution_time_ms, session_id, query_hash
+            ) VALUES (
+                :user_id, :user_query, :input_payload, :sql_query, :relevant_tables,
+                :primary_table, :success, :error_message, :result_data, :formatted_data,
+                :row_count, :execution_time_ms, :session_id, :query_hash
+            ) RETURNING result_id
+            """
+            
+            with self.db_manager.engine.connect() as connection:
+                result_proxy = connection.execute(text(insert_sql), insert_data)
+                result_id = result_proxy.fetchone()[0]
+                connection.commit()
+                
+                logger.info(f"Query result stored with ID: {result_id}")
+                return result_id
+                
+        except Exception as e:
+            logger.error(f"Failed to store query result: {e}")
+            return None
+    
+    def get_query_results(self, user_id: Optional[str] = None, limit: int = 100, 
+                         successful_only: bool = False) -> List[Dict[str, Any]]:
+        """Retrieve stored query results"""
+        try:
+            if not self.db_manager.engine:
+                self.db_manager.connect()
+            
+            where_conditions = []
+            params = {'limit': limit}
+            
+            if user_id:
+                where_conditions.append("user_id = :user_id")
+                params['user_id'] = user_id
+            
+            if successful_only:
+                where_conditions.append("success = true")
+            
+            where_clause = "WHERE " + " AND ".join(where_conditions) if where_conditions else ""
+            
+            select_sql = f"""
+            SELECT 
+                result_id, user_id, user_query, input_payload, sql_query,
+                relevant_tables, primary_table, success, error_message,
+                result_data, formatted_data, row_count, execution_time_ms,
+                created_at, session_id, query_hash
+            FROM query_results 
+            {where_clause}
+            ORDER BY created_at DESC 
+            LIMIT :limit
+            """
+            
+            with self.db_manager.engine.connect() as connection:
+                result = connection.execute(text(select_sql), params)
+                rows = result.fetchall()
+                
+                # Convert to list of dictionaries
+                results = []
+                for row in rows:
+                    row_dict = dict(row._mapping)
+                    
+                    # Parse JSON fields
+                    if row_dict['input_payload']:
+                        try:
+                            row_dict['input_payload'] = json.loads(row_dict['input_payload'])
+                        except:
+                            pass
+                    
+                    if row_dict['result_data']:
+                        try:
+                            row_dict['result_data'] = json.loads(row_dict['result_data'])
+                        except:
+                            pass
+                    
+                    if row_dict['formatted_data']:
+                        try:
+                            row_dict['formatted_data'] = json.loads(row_dict['formatted_data'])
+                        except:
+                            pass
+                    
+                    results.append(row_dict)
+                
+                return results
+                
+        except Exception as e:
+            logger.error(f"Failed to retrieve query results: {e}")
+            return []
+    
+    def get_query_statistics(self, user_id: Optional[str] = None) -> Dict[str, Any]:
+        """Get statistics about stored queries"""
+        try:
+            if not self.db_manager.engine:
+                self.db_manager.connect()
+            
+            where_clause = "WHERE user_id = :user_id" if user_id else ""
+            params = {'user_id': user_id} if user_id else {}
+            
+            stats_sql = f"""
+            SELECT 
+                COUNT(*) as total_queries,
+                COUNT(*) FILTER (WHERE success = true) as successful_queries,
+                COUNT(*) FILTER (WHERE success = false) as failed_queries,
+                AVG(execution_time_ms) as avg_execution_time_ms,
+                AVG(row_count) FILTER (WHERE success = true) as avg_rows_returned,
+                COUNT(DISTINCT user_id) as unique_users,
+                MIN(created_at) as first_query,
+                MAX(created_at) as last_query
+            FROM query_results
+            {where_clause}
+            """
+            
+            with self.db_manager.engine.connect() as connection:
+                result = connection.execute(text(stats_sql), params)
+                row = result.fetchone()
+                
+                if row:
+                    return dict(row._mapping)
+                else:
+                    return {}
+                    
+        except Exception as e:
+            logger.error(f"Failed to get query statistics: {e}")
+            return {}
+
 class DatabaseManager:
     """Enhanced database manager with multi-table support"""
     
@@ -678,6 +884,7 @@ class NLToSQLAgent:
         self.llm_service = LLMService(openai_api_key)
         self.table_mapping = TableMapping()
         self.data_formatter = DataFormatter()
+        self.result_storage = QueryResultStorage(self.db_manager)
         self.graph = None
         self.setup_graph()
         
@@ -857,8 +1064,12 @@ class NLToSQLAgent:
         return state
     
     async def process_query(self, user_query: str, user_id: Optional[str] = None, 
-                          input_payload: Optional[Union[Dict[str, Any], InputPayload]] = None) -> Dict[str, Any]:
+                          input_payload: Optional[Union[Dict[str, Any], InputPayload]] = None,
+                          store_result: bool = True, session_id: Optional[str] = None) -> Dict[str, Any]:
         """Process a natural language query through the LangGraph agent"""
+        
+        import time
+        start_time = time.time()
         
         # Convert input_payload to InputPayload if it's a dict
         if isinstance(input_payload, dict):
@@ -891,6 +1102,9 @@ class NLToSQLAgent:
                 except (KeyError, AttributeError, TypeError):
                     return default
             
+            # Calculate execution time
+            execution_time_ms = int((time.time() - start_time) * 1000)
+            
             # Format response using safe extraction
             response = {
                 'query': user_query,
@@ -902,7 +1116,8 @@ class NLToSQLAgent:
                 'success': not bool(safe_get(result, 'error_message', '')),
                 'error_message': safe_get(result, 'error_message', ''),
                 'formatted_data': safe_get(result, 'formatted_data', None),
-                'row_count': 0
+                'row_count': 0,
+                'execution_time_ms': execution_time_ms
             }
             
             # Calculate row count safely
@@ -910,11 +1125,27 @@ class NLToSQLAgent:
             if execution_result is not None and hasattr(execution_result, '__len__'):
                 response['row_count'] = len(execution_result)
             
+            # Store result in database if requested
+            if store_result:
+                try:
+                    result_id = self.result_storage.store_query_result(
+                        response, 
+                        execution_time_ms, 
+                        session_id
+                    )
+                    response['result_id'] = result_id
+                    logger.info(f"Query result stored with ID: {result_id}")
+                except Exception as storage_error:
+                    logger.warning(f"Failed to store query result: {storage_error}")
+                    response['storage_warning'] = str(storage_error)
+            
             return response
             
         except Exception as e:
+            execution_time_ms = int((time.time() - start_time) * 1000)
             logger.error(f"Error during query processing: {e}")
-            return {
+            
+            error_response = {
                 'query': user_query,
                 'user_id': user_id,
                 'input_payload': input_payload.dict() if input_payload else None,
@@ -924,8 +1155,23 @@ class NLToSQLAgent:
                 'success': False,
                 'error_message': f"Processing error: {str(e)}",
                 'formatted_data': None,
-                'row_count': 0
+                'row_count': 0,
+                'execution_time_ms': execution_time_ms
             }
+            
+            # Store error result if requested
+            if store_result:
+                try:
+                    result_id = self.result_storage.store_query_result(
+                        error_response, 
+                        execution_time_ms, 
+                        session_id
+                    )
+                    error_response['result_id'] = result_id
+                except Exception as storage_error:
+                    logger.warning(f"Failed to store error result: {storage_error}")
+            
+            return error_response
 
 # Enhanced application interface with payload support
 class NLToSQLApp:
@@ -936,10 +1182,15 @@ class NLToSQLApp:
         self.current_user_id = None
         self.available_users = []
         self.table_mapping = TableMapping()
+        self.session_id = None
         self.setup_environment()
     
     def setup_environment(self):
         """Setup environment and initialize agent"""
+        # Generate session ID for this session
+        import uuid
+        self.session_id = str(uuid.uuid4())
+        
         # Get OpenAI API key from environment
         load_dotenv()
         openai_api_key = os.getenv('OPENAI_API_KEY')
@@ -959,8 +1210,10 @@ class NLToSQLApp:
         print("📊 Database connected")
         print("🤖 LLM service ready")
         print("🔄 LangGraph workflow compiled")
+        print("💾 Query result storage enabled")
         print(f"👥 Found {len(self.available_users)} users in database")
         print(f"🏛️  Supported tables: {', '.join(self.table_mapping.table_keywords.keys())}")
+        print(f"📝 Session ID: {self.session_id}")
         print("\n" + "="*60)
     
     def select_user(self):
@@ -1097,12 +1350,124 @@ class NLToSQLApp:
         print("   - Include JSON payload like: {'CIN': 22, 'account_number': 900914}")
         print("="*60)
     
+    def show_query_history(self, limit: int = 10):
+        """Show recent query history for current user"""
+        try:
+            results = self.agent.result_storage.get_query_results(
+                user_id=self.current_user_id,
+                limit=limit,
+                successful_only=False
+            )
+            
+            if not results:
+                print("📝 No query history found.")
+                return
+            
+            print(f"\n📊 Recent Query History (last {len(results)} queries):")
+            print("="*80)
+            
+            for i, result in enumerate(results, 1):
+                status = "✅" if result['success'] else "❌"
+                created_at = result['created_at'].strftime("%Y-%m-%d %H:%M:%S")
+                execution_time = result['execution_time_ms']
+                
+                print(f"\n{i}. {status} [{created_at}] ({execution_time}ms)")
+                print(f"   Query: {result['user_query'][:80]}...")
+                print(f"   Tables: {', '.join(result['relevant_tables']) if result['relevant_tables'] else 'None'}")
+                print(f"   Rows: {result['row_count']}")
+                
+                if not result['success']:
+                    print(f"   Error: {result['error_message'][:60]}...")
+            
+            print("="*80)
+            
+        except Exception as e:
+            print(f"❌ Error retrieving query history: {e}")
+    
+    def show_query_statistics(self):
+        """Show query statistics for current user"""
+        try:
+            stats = self.agent.result_storage.get_query_statistics(self.current_user_id)
+            
+            if not stats or stats.get('total_queries', 0) == 0:
+                print("📊 No query statistics available.")
+                return
+            
+            print("\n📊 Query Statistics:")
+            print("="*50)
+            print(f"Total queries: {stats.get('total_queries', 0)}")
+            print(f"Successful: {stats.get('successful_queries', 0)}")
+            print(f"Failed: {stats.get('failed_queries', 0)}")
+            
+            if stats.get('total_queries', 0) > 0:
+                success_rate = (stats.get('successful_queries', 0) / stats.get('total_queries', 1)) * 100
+                print(f"Success rate: {success_rate:.1f}%")
+            
+            if stats.get('avg_execution_time_ms'):
+                print(f"Avg execution time: {stats['avg_execution_time_ms']:.0f}ms")
+            
+            if stats.get('avg_rows_returned'):
+                print(f"Avg rows returned: {stats['avg_rows_returned']:.1f}")
+            
+            if stats.get('first_query'):
+                print(f"First query: {stats['first_query']}")
+            
+            if stats.get('last_query'):
+                print(f"Last query: {stats['last_query']}")
+            
+            print("="*50)
+            
+        except Exception as e:
+            print(f"❌ Error retrieving statistics: {e}")
+    
+    def replay_query(self, result_id: int):
+        """Replay a stored query by ID"""
+        try:
+            results = self.agent.result_storage.get_query_results(limit=1000)
+            stored_result = None
+            
+            for result in results:
+                if result['result_id'] == result_id:
+                    stored_result = result
+                    break
+            
+            if not stored_result:
+                print(f"❌ Query with ID {result_id} not found.")
+                return
+            
+            print(f"\n🔄 Replaying query {result_id}:")
+            print(f"Original query: {stored_result['user_query']}")
+            print(f"Original user: {stored_result['user_id']}")
+            print(f"Original payload: {stored_result['input_payload']}")
+            
+            # Convert stored payload back to InputPayload if exists
+            payload = None
+            if stored_result['input_payload']:
+                payload = InputPayload(**stored_result['input_payload'])
+            
+            # Execute the query again
+            print("🤔 Re-executing query...")
+            result = asyncio.run(self.agent.process_query(
+                stored_result['user_query'],
+                stored_result['user_id'],
+                payload,
+                store_result=True,
+                session_id=self.session_id
+            ))
+            
+            # Display new results
+            self.display_results(result)
+            
+        except Exception as e:
+            print(f"❌ Error replaying query: {e}")
+    
     def run_interactive(self):
         """Run enhanced interactive command-line interface"""
         print("🚀 Enhanced Multi-Table NL to SQL Agent with LangGraph")
         print("Ask questions about your financial data across multiple tables!")
         print("Type 'quit' to exit, 'help' for examples, 'tables' for table info, 'user' to change user")
-        print("Include JSON payload for filtering: {'CIN': 22, 'sort_code': 123456}\n")
+        print("Include JSON payload for filtering: {'CIN': 22, 'sort_code': 123456}")
+        print("Additional commands: 'history' (query history), 'stats' (statistics), 'replay <id>' (replay query)\n")
         
         # Initial user selection
         if self.available_users:
@@ -1114,20 +1479,20 @@ class NLToSQLApp:
                 context_info = f"👤 {self.current_user_id}" if self.current_user_id else "🌍 All Users"
                 user_input = input(f"\n{context_info} | 💬 Your question: ").strip()
                 
-                if user_input.lower() in ['quit', 'exit', 'q']:
-                    print("Goodbye! 👋")
-                    break
-                
-                if user_input.lower() == 'help':
-                    self.show_examples()
+                if user_input.lower() == 'history':
+                    self.show_query_history()
                     continue
                 
-                if user_input.lower() in ['tables', 'table', 'schema']:
-                    self.show_table_info()
+                if user_input.lower() == 'stats':
+                    self.show_query_statistics()
                     continue
                 
-                if user_input.lower() == 'user':
-                    self.select_user()
+                if user_input.lower().startswith('replay '):
+                    try:
+                        result_id = int(user_input.split()[1])
+                        self.replay_query(result_id)
+                    except (IndexError, ValueError):
+                        print("❌ Usage: replay <result_id>")
                     continue
                 
                 if not user_input:
@@ -1144,7 +1509,9 @@ class NLToSQLApp:
                 result = asyncio.run(self.agent.process_query(
                     user_input, 
                     self.current_user_id,
-                    payload
+                    payload,
+                    store_result=True,
+                    session_id=self.session_id
                 ))
                 
                 # Display results
@@ -1216,6 +1583,12 @@ class NLToSQLApp:
         print("📦 Payload formats supported:")
         print('   - JSON style: {"CIN": 22, "sort_code": 123456}')
         print("   - Python style: {'CIN': 22, 'sort_code': 123456}")
+        print("\n🔧 Additional Commands:")
+        print("   - 'history' - Show recent query history")
+        print("   - 'stats' - Show query statistics")
+        print("   - 'replay <id>' - Replay a stored query by ID")
+        print("   - 'user' - Change user context")
+        print("   - 'tables' - Show table information")
         print("="*60)
     
     def display_results(self, result: Dict[str, Any]):
@@ -1224,6 +1597,8 @@ class NLToSQLApp:
         
         if not result['success']:
             print(f"❌ Error: {result['error_message']}")
+            if result.get('result_id'):
+                print(f"📝 Error logged with ID: {result['result_id']}")
             return
         
         print(f"🔍 Query: {result['query']}")
@@ -1239,6 +1614,10 @@ class NLToSQLApp:
         print(f"🔗 Relevant Tables: {', '.join(result['relevant_tables'])}")
         print(f"📝 Generated SQL: {result['sql_query']}")
         print(f"📊 Rows returned: {result['row_count']}")
+        print(f"⏱️  Execution time: {result['execution_time_ms']}ms")
+        
+        if result.get('result_id'):
+            print(f"💾 Result stored with ID: {result['result_id']}")
         
         if result['formatted_data'] and result['formatted_data']['data']:
             print("\n📋 Formatted Results:")
@@ -1260,22 +1639,457 @@ class NLToSQLApp:
                 print(f"\n... and {len(data) - 10} more rows")
             
             print(f"\n📊 Data ready for external visualization system")
+        elif result['row_count'] == 0:
+            print("\n📋 No data returned for this query")
         
         print("\n" + "="*60)
 
-# Command line interface
+# Enhanced API interface for external applications
+class NLToSQLAPI:
+    """RESTful API interface for external applications"""
+    
+    def __init__(self, database_url: str, openai_api_key: str):
+        self.agent = NLToSQLAgent(database_url, openai_api_key)
+        self.agent.db_manager.connect()
+    
+    async def query(self, request_data: Dict[str, Any]) -> Dict[str, Any]:
+        """Process a query request from external API"""
+        try:
+            # Extract request parameters
+            user_query = request_data.get('query', '')
+            user_id = request_data.get('user_id')
+            payload_data = request_data.get('payload', {})
+            session_id = request_data.get('session_id')
+            store_result = request_data.get('store_result', True)
+            
+            # Validate required fields
+            if not user_query:
+                return {
+                    'success': False,
+                    'error_message': 'Query parameter is required',
+                    'error_type': 'validation_error'
+                }
+            
+            # Convert payload to InputPayload if provided
+            input_payload = None
+            if payload_data:
+                try:
+                    input_payload = InputPayload(**payload_data)
+                except Exception as e:
+                    return {
+                        'success': False,
+                        'error_message': f'Invalid payload format: {str(e)}',
+                        'error_type': 'payload_error'
+                    }
+            
+            # Process the query
+            result = await self.agent.process_query(
+                user_query=user_query,
+                user_id=user_id,
+                input_payload=input_payload,
+                store_result=store_result,
+                session_id=session_id
+            )
+            
+            return result
+            
+        except Exception as e:
+            logger.error(f"API query processing error: {e}")
+            return {
+                'success': False,
+                'error_message': f'Internal processing error: {str(e)}',
+                'error_type': 'processing_error'
+            }
+    
+    def get_query_history(self, user_id: Optional[str] = None, limit: int = 100, 
+                         successful_only: bool = False) -> Dict[str, Any]:
+        """Get query history via API"""
+        try:
+            results = self.agent.result_storage.get_query_results(
+                user_id=user_id,
+                limit=limit,
+                successful_only=successful_only
+            )
+            
+            return {
+                'success': True,
+                'data': results,
+                'count': len(results)
+            }
+            
+        except Exception as e:
+            logger.error(f"API history retrieval error: {e}")
+            return {
+                'success': False,
+                'error_message': f'Failed to retrieve query history: {str(e)}',
+                'error_type': 'retrieval_error'
+            }
+    
+    def get_query_statistics(self, user_id: Optional[str] = None) -> Dict[str, Any]:
+        """Get query statistics via API"""
+        try:
+            stats = self.agent.result_storage.get_query_statistics(user_id)
+            
+            return {
+                'success': True,
+                'data': stats
+            }
+            
+        except Exception as e:
+            logger.error(f"API statistics retrieval error: {e}")
+            return {
+                'success': False,
+                'error_message': f'Failed to retrieve statistics: {str(e)}',
+                'error_type': 'retrieval_error'
+            }
+    
+    def get_table_schema(self, tables: Optional[List[str]] = None) -> Dict[str, Any]:
+        """Get table schema information via API"""
+        try:
+            schema_info = self.agent.db_manager.get_schema_info(tables)
+            
+            return {
+                'success': True,
+                'data': schema_info
+            }
+            
+        except Exception as e:
+            logger.error(f"API schema retrieval error: {e}")
+            return {
+                'success': False,
+                'error_message': f'Failed to retrieve schema: {str(e)}',
+                'error_type': 'schema_error'
+            }
+
+# Utility functions for external integration
+def create_agent(database_url: str = None, openai_api_key: str = None) -> NLToSQLAgent:
+    """Factory function to create an agent instance"""
+    if not database_url:
+        database_url = DATABASE_URL
+    
+    if not openai_api_key:
+        load_dotenv()
+        openai_api_key = os.getenv('OPENAI_API_KEY')
+        if not openai_api_key:
+            raise ValueError("OpenAI API key is required")
+    
+    return NLToSQLAgent(database_url, openai_api_key)
+
+def create_api(database_url: str = None, openai_api_key: str = None) -> NLToSQLAPI:
+    """Factory function to create an API instance"""
+    if not database_url:
+        database_url = DATABASE_URL
+    
+    if not openai_api_key:
+        load_dotenv()
+        openai_api_key = os.getenv('OPENAI_API_KEY')
+        if not openai_api_key:
+            raise ValueError("OpenAI API key is required")
+    
+    return NLToSQLAPI(database_url, openai_api_key)
+
+# Example usage for external applications
+async def example_api_usage():
+    """Example of how to use the API programmatically"""
+    
+    # Create API instance
+    api = create_api()
+    
+    # Example query request
+    request_data = {
+        'query': 'Show me spending by category for the last month',
+        'user_id': 'user_001',
+        'payload': {
+            'CIN': 22,
+            'sort_code': 123456
+        },
+        'session_id': 'example_session_123',
+        'store_result': True
+    }
+    
+    # Process query
+    result = await api.query(request_data)
+    
+    if result['success']:
+        print("Query successful!")
+        print(f"SQL: {result['sql_query']}")
+        print(f"Rows: {result['row_count']}")
+        print(f"Data: {result['formatted_data']}")
+    else:
+        print(f"Query failed: {result['error_message']}")
+    
+    # Get query history
+    history = api.get_query_history(user_id='user_001', limit=10)
+    print(f"Query history: {len(history['data'])} queries")
+    
+    # Get statistics
+    stats = api.get_query_statistics(user_id='user_001')
+    print(f"User statistics: {stats['data']}")
+
+# Health check and setup utilities
+def check_dependencies():
+    """Check if all required dependencies are available"""
+    missing_deps = []
+    
+    try:
+        import sqlalchemy
+    except ImportError:
+        missing_deps.append("sqlalchemy")
+    
+    try:
+        import pandas
+    except ImportError:
+        missing_deps.append("pandas")
+    
+    try:
+        import openai
+    except ImportError:
+        missing_deps.append("openai")
+    
+    try:
+        import pydantic
+    except ImportError:
+        missing_deps.append("pydantic")
+    
+    try:
+        from langgraph.graph import StateGraph
+    except ImportError:
+        missing_deps.append("langgraph")
+    
+    try:
+        from dotenv import load_dotenv
+    except ImportError:
+        missing_deps.append("python-dotenv")
+    
+    if missing_deps:
+        print("❌ Missing required dependencies:")
+        for dep in missing_deps:
+            print(f"   - {dep}")
+        print("\nInstall with: pip install " + " ".join(missing_deps))
+        return False
+    
+    return True
+
+def setup_database_tables():
+    """Create sample database tables for testing (optional)"""
+    create_tables_sql = """
+    -- Create users table
+    CREATE TABLE IF NOT EXISTS users (
+        user_id VARCHAR(50) PRIMARY KEY,
+        username VARCHAR(100),
+        email VARCHAR(100),
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+
+    -- Create categories table
+    CREATE TABLE IF NOT EXISTS categories (
+        category_id SERIAL PRIMARY KEY,
+        category_name VARCHAR(100) NOT NULL,
+        description TEXT
+    );
+
+    -- Create merchants table
+    CREATE TABLE IF NOT EXISTS merchants (
+        merchant_id SERIAL PRIMARY KEY,
+        merchant_name VARCHAR(200) NOT NULL,
+        merchant_category VARCHAR(100)
+    );
+
+    -- Create accounts table
+    CREATE TABLE IF NOT EXISTS accounts (
+        account_id SERIAL PRIMARY KEY,
+        account_number BIGINT UNIQUE,
+        sort_code INTEGER,
+        user_id VARCHAR(50) REFERENCES users(user_id),
+        account_type VARCHAR(50),
+        balance DECIMAL(12,2) DEFAULT 0.00,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+
+    -- Create payments table
+    CREATE TABLE IF NOT EXISTS payments (
+        payment_id SERIAL PRIMARY KEY,
+        user_id VARCHAR(50) REFERENCES users(user_id),
+        account_number BIGINT,
+        sort_code INTEGER,
+        customer_id INTEGER,
+        merchant_id INTEGER REFERENCES merchants(merchant_id),
+        category_id INTEGER REFERENCES categories(category_id),
+        amount DECIMAL(10,2) NOT NULL,
+        transaction_date DATE,
+        description TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+
+    -- Create budgets table
+    CREATE TABLE IF NOT EXISTS budgets (
+        budget_id SERIAL PRIMARY KEY,
+        user_id VARCHAR(50) REFERENCES users(user_id),
+        category_id INTEGER REFERENCES categories(category_id),
+        budget_amount DECIMAL(10,2) NOT NULL,
+        period_start DATE,
+        period_end DATE,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+
+    -- Insert sample data
+    INSERT INTO categories (category_name, description) VALUES
+    ('Food & Dining', 'Restaurants, groceries, food delivery'),
+    ('Entertainment', 'Movies, games, streaming services'),
+    ('Transportation', 'Gas, public transport, ride sharing'),
+    ('Shopping', 'Retail purchases, online shopping'),
+    ('Bills & Utilities', 'Electricity, water, internet, phone')
+    ON CONFLICT DO NOTHING;
+
+    INSERT INTO merchants (merchant_name, merchant_category) VALUES
+    ('Netflix', 'Entertainment'),
+    ('Uber', 'Transportation'),
+    ('Amazon', 'Shopping'),
+    ('Starbucks', 'Food & Dining'),
+    ('Shell', 'Transportation')
+    ON CONFLICT DO NOTHING;
+    """
+    
+    try:
+        from sqlalchemy import create_engine, text
+        engine = create_engine(DATABASE_URL)
+        with engine.connect() as connection:
+            connection.execute(text(create_tables_sql))
+            connection.commit()
+        print("✅ Database tables created/verified successfully")
+        return True
+    except Exception as e:
+        print(f"⚠️  Could not create database tables: {e}")
+        print("   (Tables may already exist or you may need to create them manually)")
+        return False
+
+def health_check():
+    """Perform a comprehensive health check"""
+    print("🔍 Performing system health check...\n")
+    
+    # Check dependencies
+    print("1. Checking dependencies...")
+    if not check_dependencies():
+        return False
+    print("   ✅ All dependencies available\n")
+    
+    # Check environment variables
+    print("2. Checking environment variables...")
+    load_dotenv()
+    openai_key = os.getenv('OPENAI_API_KEY')
+    if not openai_key:
+        print("   ❌ OPENAI_API_KEY not found in environment")
+        print("   Set it with: export OPENAI_API_KEY='your-key-here'")
+        return False
+    print("   ✅ OPENAI_API_KEY found\n")
+    
+    # Check database connection
+    print("3. Checking database connection...")
+    try:
+        from sqlalchemy import create_engine
+        engine = create_engine(DATABASE_URL)
+        with engine.connect() as connection:
+            connection.execute(text("SELECT 1"))
+        print("   ✅ Database connection successful\n")
+    except Exception as e:
+        print(f"   ❌ Database connection failed: {e}")
+        print("   Check your DATABASE_URL and ensure PostgreSQL is running")
+        return False
+    
+    # Optional: Setup database tables
+    print("4. Setting up database tables...")
+    setup_database_tables()
+    print()
+    
+    print("🎉 Health check completed successfully!")
+    return True
+
+# Enhanced command line interface with options
 def main():
     """Main entry point for command line usage"""
+    import sys
+    
+    # Parse command line arguments
+    if len(sys.argv) > 1:
+        command = sys.argv[1].lower()
+        
+        if command in ['health', 'check', 'healthcheck']:
+            if health_check():
+                print("\n✅ System ready! You can now run the application.")
+                return
+            else:
+                print("\n❌ Health check failed. Please fix the issues above.")
+                sys.exit(1)
+        
+        elif command in ['setup', 'init', 'initialize']:
+            print("🔧 Setting up Enhanced NL to SQL Agent...")
+            if health_check():
+                print("\n🎉 Setup completed successfully!")
+                print("You can now run: python script.py")
+                return
+            else:
+                sys.exit(1)
+        
+        elif command in ['api', 'server']:
+            print("🚀 Starting API mode...")
+            print("Note: This is a basic example. For production, use FastAPI or Flask.")
+            # Here you could start a web server
+            try:
+                asyncio.run(example_api_usage())
+            except Exception as e:
+                print(f"API example error: {e}")
+            return
+        
+        elif command in ['help', '-h', '--help']:
+            print("Enhanced Multi-Table NL to SQL Agent")
+            print("=====================================")
+            print("Usage:")
+            print("  python script.py                 - Start interactive mode")
+            print("  python script.py health          - Run health check")
+            print("  python script.py setup           - Initialize system")
+            print("  python script.py api             - API usage example")
+            print("  python script.py help            - Show this help")
+            return
+        
+        else:
+            print(f"Unknown command: {command}")
+            print("Use 'python script.py help' for available commands")
+            return
+    
+    # Default: Start interactive application
     try:
+        print("🚀 Starting Enhanced Multi-Table NL to SQL Agent...")
+        print("Run 'python script.py health' first if you encounter issues.\n")
+        
         app = NLToSQLApp()
         app.run_interactive()
+        
+    except KeyboardInterrupt:
+        print("\n\n👋 Goodbye!")
     except Exception as e:
-        print(f"Failed to start application: {e}")
-        print("Make sure you have:")
-        print("1. Set OPENAI_API_KEY environment variable")
-        print("2. PostgreSQL running with the test database")
-        print("3. Installed all required dependencies")
-        print("4. Database tables exist (payments, categories, merchants, users, budgets, accounts)")
+        print(f"\n❌ Failed to start application: {e}")
+        print("\n🔧 Troubleshooting steps:")
+        print("1. Run health check: python script.py health")
+        print("2. Set OPENAI_API_KEY environment variable")
+        print("3. Ensure PostgreSQL is running")
+        print("4. Install dependencies: pip install sqlalchemy pandas openai pydantic langgraph python-dotenv")
+        print("5. Check DATABASE_URL configuration")
+
+# Export main classes for external use
+__all__ = [
+    'NLToSQLAgent',
+    'NLToSQLAPI', 
+    'NLToSQLApp',
+    'InputPayload',
+    'TableMapping',
+    'QueryResultStorage',
+    'DatabaseManager',
+    'LLMService',
+    'DataFormatter',
+    'create_agent',
+    'create_api',
+    'main'
+]
 
 if __name__ == "__main__":
     main()
