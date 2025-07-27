@@ -1,0 +1,464 @@
+# Golden Dataset Configuration File
+# evaluation_config.yaml
+
+metadata:
+  dataset_name: "Enhanced NL-SQL Golden Dataset"
+  version: "1.0"
+  created_by: "Development Team"
+  description: "Comprehensive test cases for evaluating NL to SQL performance"
+  last_updated: "2024-01-15"
+
+# Evaluation thresholds for determining success
+evaluation_thresholds:
+  sql_similarity_threshold: 0.7        # Minimum SQL similarity score
+  table_f1_threshold: 0.8             # Minimum table selection F1 score
+  result_similarity_threshold: 0.9     # Minimum result similarity score
+  latency_threshold_ms: 5000           # Maximum acceptable latency
+  numerical_tolerance: 0.01            # Tolerance for numerical comparisons
+
+# Test case categories and their weights
+test_categories:
+  basic_queries:
+    weight: 0.2
+    description: "Simple single-table queries"
+  
+  multi_table_queries:
+    weight: 0.3
+    description: "Complex queries spanning multiple tables"
+  
+  payload_queries:
+    weight: 0.25
+    description: "Queries with external payload filtering"
+  
+  aggregation_queries:
+    weight: 0.15
+    description: "Queries with GROUP BY, SUM, AVG, etc."
+  
+  edge_cases:
+    weight: 0.1
+    description: "Error conditions and boundary cases"
+
+# Sample test cases
+test_cases:
+  # Basic Queries
+  - test_id: "basic_001"
+    natural_query: "Show me all payments"
+    user_id: "user_001"
+    expected_sql: "SELECT * FROM payments WHERE user_id = 'user_001'"
+    expected_tables: ["payments"]
+    expected_primary_table: "payments"
+    expected_row_count: 10
+    difficulty: "easy"
+    category: "basic_queries"
+    description: "Basic payment retrieval with user context"
+    tags: ["payments", "user_context"]
+
+  - test_id: "basic_002"
+    natural_query: "What's my account balance?"
+    user_id: "user_001"
+    expected_sql: "SELECT balance FROM accounts WHERE user_id = 'user_001'"
+    expected_tables: ["accounts"]
+    expected_primary_table: "accounts"
+    expected_numerical_values:
+      balance: 2500.75
+    difficulty: "easy"
+    category: "basic_queries"
+    description: "Account balance query"
+    tags: ["accounts", "balance"]
+
+  - test_id: "basic_003"
+    natural_query: "Show payments over $100"
+    expected_sql: "SELECT * FROM payments WHERE amount > 100"
+    expected_tables: ["payments"]
+    expected_primary_table: "payments"
+    expected_row_count: 8
+    expected_numerical_values:
+      total_amount: 1250.50
+    difficulty: "easy"
+    category: "basic_queries"
+    description: "Payment filtering by amount"
+    tags: ["payments", "filtering"]
+
+  # Multi-table Queries
+  - test_id: "multi_001"
+    natural_query: "Show my spending by category"
+    user_id: "user_001"
+    expected_sql: "SELECT c.category_name, SUM(p.amount) as total FROM payments p JOIN categories c ON p.category_id = c.category_id WHERE p.user_id = 'user_001' GROUP BY c.category_name"
+    expected_tables: ["payments", "categories"]
+    expected_primary_table: "payments"
+    expected_result:
+      - category_name: "Food & Dining"
+        total: 450.25
+      - category_name: "Transportation"
+        total: 125.50
+      - category_name: "Entertainment"
+        total: 89.75
+    expected_numerical_values:
+      total: 665.50
+    difficulty: "medium"
+    category: "multi_table_queries"
+    description: "Category-wise spending analysis"
+    tags: ["payments", "categories", "aggregation"]
+
+  - test_id: "multi_002"
+    natural_query: "Which merchants do I spend the most at?"
+    user_id: "user_001"
+    expected_sql: "SELECT m.merchant_name, SUM(p.amount) as total FROM payments p JOIN merchants m ON p.merchant_id = m.merchant_id WHERE p.user_id = 'user_001' GROUP BY m.merchant_name ORDER BY total DESC"
+    expected_tables: ["payments", "merchants"]
+    expected_primary_table: "payments"
+    expected_result:
+      - merchant_name: "Amazon"
+        total: 234.50
+      - merchant_name: "Starbucks"
+        total: 156.25
+      - merchant_name: "Uber"
+        total: 98.75
+    difficulty: "medium"
+    category: "multi_table_queries"
+    description: "Top merchants by spending"
+    tags: ["payments", "merchants", "ranking"]
+
+  - test_id: "multi_003"
+    natural_query: "Compare my budget vs actual spending by category"
+    user_id: "user_001"
+    expected_sql: "SELECT c.category_name, b.budget_amount, COALESCE(SUM(p.amount), 0) as actual_spending FROM categories c LEFT JOIN budgets b ON c.category_id = b.category_id AND b.user_id = 'user_001' LEFT JOIN payments p ON c.category_id = p.category_id AND p.user_id = 'user_001' GROUP BY c.category_name, b.budget_amount"
+    expected_tables: ["categories", "budgets", "payments"]
+    expected_primary_table: "budgets"
+    expected_result:
+      - category_name: "Food & Dining"
+        budget_amount: 500.00
+        actual_spending: 450.25
+      - category_name: "Transportation"
+        budget_amount: 200.00
+        actual_spending: 125.50
+    difficulty: "hard"
+    category: "multi_table_queries"
+    description: "Budget vs actual comparison"
+    tags: ["budgets", "payments", "categories", "comparison"]
+
+  # Payload Queries
+  - test_id: "payload_001"
+    natural_query: "Show payments for this customer"
+    payload:
+      CIN: 22
+      sort_code: 123456
+    expected_sql: "SELECT * FROM payments WHERE customer_id = 22 AND sort_code = 123456"
+    expected_tables: ["payments"]
+    expected_primary_table: "payments"
+    expected_row_count: 5
+    expected_numerical_values:
+      total_amount: 675.80
+    difficulty: "medium"
+    category: "payload_queries"
+    description: "Customer-specific payment retrieval"
+    tags: ["payments", "payload", "customer_filter"]
+
+  - test_id: "payload_002"
+    natural_query: "What's the account balance?"
+    payload:
+      account_number: 900914
+      sort_code: 123456
+    expected_sql: "SELECT balance FROM accounts WHERE account_number = 900914 AND sort_code = 123456"
+    expected_tables: ["accounts"]
+    expected_primary_table: "accounts"
+    expected_numerical_values:
+      balance: 1234.56
+    difficulty: "medium"
+    category: "payload_queries"
+    description: "Account balance with payload filtering"
+    tags: ["accounts", "payload", "balance"]
+
+  - test_id: "payload_003"
+    natural_query: "Show spending by category for this customer"
+    payload:
+      CIN: 22
+    expected_sql: "SELECT c.category_name, SUM(p.amount) as total FROM payments p JOIN categories c ON p.category_id = c.category_id WHERE p.customer_id = 22 GROUP BY c.category_name"
+    expected_tables: ["payments", "categories"]
+    expected_primary_table: "payments"
+    expected_result:
+      - category_name: "Food & Dining"
+        total: 234.50
+      - category_name: "Transportation"
+        total: 145.30
+    difficulty: "hard"
+    category: "payload_queries"
+    description: "Multi-table query with payload"
+    tags: ["payments", "categories", "payload", "aggregation"]
+
+  # Aggregation Queries
+  - test_id: "agg_001"
+    natural_query: "What's my average transaction amount?"
+    user_id: "user_001"
+    expected_sql: "SELECT AVG(amount) as avg_amount FROM payments WHERE user_id = 'user_001'"
+    expected_tables: ["payments"]
+    expected_primary_table: "payments"
+    expected_numerical_values:
+      avg_amount: 87.34
+    difficulty: "easy"
+    category: "aggregation_queries"
+    description: "Average calculation"
+    tags: ["payments", "aggregation", "average"]
+
+  - test_id: "agg_002"
+    natural_query: "How much did I spend last month?"
+    user_id: "user_001"
+    expected_sql: "SELECT SUM(amount) as total FROM payments WHERE user_id = 'user_001' AND transaction_date >= CURRENT_DATE - INTERVAL '1 month'"
+    expected_tables: ["payments"]
+    expected_primary_table: "payments"
+    expected_numerical_values:
+      total: 567.89
+    difficulty: "medium"
+    category: "aggregation_queries"
+    description: "Monthly spending calculation with date filtering"
+    tags: ["payments", "aggregation", "date_filter"]
+
+  - test_id: "agg_003"
+    natural_query: "Show my top 5 spending categories"
+    user_id: "user_001"
+    expected_sql: "SELECT c.category_name, SUM(p.amount) as total FROM payments p JOIN categories c ON p.category_id = c.category_id WHERE p.user_id = 'user_001' GROUP BY c.category_name ORDER BY total DESC LIMIT 5"
+    expected_tables: ["payments", "categories"]
+    expected_primary_table: "payments"
+    expected_result:
+      - category_name: "Food & Dining"
+        total: 450.25
+      - category_name: "Transportation"
+        total: 234.50
+      - category_name: "Entertainment"
+        total: 156.75
+      - category_name: "Shopping"
+        total: 123.40
+      - category_name: "Bills & Utilities"
+        total: 89.25
+    difficulty: "medium"
+    category: "aggregation_queries"
+    description: "Top N categories with ranking"
+    tags: ["payments", "categories", "ranking", "limit"]
+
+  # Edge Cases
+  - test_id: "edge_001"
+    natural_query: "Show me transactions for a user that doesn't exist"
+    user_id: "nonexistent_user"
+    expected_sql: "SELECT * FROM payments WHERE user_id = 'nonexistent_user'"
+    expected_tables: ["payments"]
+    expected_primary_table: "payments"
+    expected_row_count: 0
+    expected_result: []
+    difficulty: "easy"
+    category: "edge_cases"
+    description: "Query with no results"
+    tags: ["payments", "empty_result"]
+
+  - test_id: "edge_002"
+    natural_query: "This is not a valid query about anything"
+    expected_sql: "SELECT * FROM payments"  # Default fallback
+    expected_tables: ["payments"]
+    expected_primary_table: "payments"
+    difficulty: "hard"
+    category: "edge_cases"
+    description: "Ambiguous query handling"
+    tags: ["ambiguous", "fallback"]
+
+  - test_id: "edge_003"
+    natural_query: "Show payments with malicious input'; DROP TABLE payments; --"
+    expected_sql: ""  # Should be blocked
+    expected_tables: []
+    expected_primary_table: ""
+    difficulty: "expert"
+    category: "edge_cases"
+    description: "SQL injection attempt"
+    tags: ["security", "sql_injection"]
+
+---
+
+# Usage Guide for Performance Evaluation Framework
+
+## Quick Start
+
+### 1. Setup Environment
+```bash
+# Install additional dependencies for evaluation
+pip install sqlparse pyyaml
+
+# Set up your golden dataset
+cp evaluation_config.yaml golden_dataset.yaml
+# Edit golden_dataset.yaml with your test cases
+```
+
+### 2. Run Basic Evaluation
+```python
+from evaluation_framework import PerformanceEvaluator
+from multi_table_nlsql import NLToSQLAgent
+
+# Initialize
+agent = NLToSQLAgent(database_url, openai_key)
+evaluator = PerformanceEvaluator(agent, "golden_dataset.yaml")
+
+# Run evaluation
+report = await evaluator.evaluate_all()
+evaluator.save_report(report, "evaluation_report.json")
+```
+
+### 3. View Results
+```python
+# Print summary
+print(f"Success Rate: {report['evaluation_summary']['success_rate']:.2%}")
+print(f"SQL Quality: {report['sql_quality_metrics']['average_similarity']:.3f}")
+print(f"Table Accuracy: {report['table_selection_metrics']['average_f1']:.3f}")
+```
+
+## Advanced Usage
+
+### Filter by Category
+```python
+# Evaluate only payload queries
+report = await evaluator.evaluate_all(
+    test_filter={"category": ["payload_queries"]}
+)
+
+# Evaluate by difficulty
+report = await evaluator.evaluate_all(
+    test_filter={"difficulty": ["easy", "medium"]}
+)
+
+# Evaluate by tags
+report = await evaluator.evaluate_all(
+    test_filter={"tags": ["payments", "aggregation"]}
+)
+```
+
+### Custom Thresholds
+```python
+# Modify evaluation thresholds
+evaluator.sql_similarity_threshold = 0.8
+evaluator.table_f1_threshold = 0.9
+evaluator.result_similarity_threshold = 0.95
+```
+
+### Continuous Integration
+```bash
+# Add to CI/CD pipeline
+python evaluate_performance.py --dataset golden_dataset.yaml --threshold 0.85 --output ci_report.json
+
+# Fail build if success rate below threshold
+if [ $(jq '.evaluation_summary.success_rate' ci_report.json | cut -d. -f1) -lt 85 ]; then
+  echo "Performance regression detected!"
+  exit 1
+fi
+```
+
+## Building Golden Datasets
+
+### Manual Creation
+```python
+from evaluation_framework import GoldenDatasetBuilder
+
+# Create test cases
+cases = [
+    GoldenDatasetBuilder.create_test_case(
+        test_id="custom_001",
+        natural_query="Your custom query",
+        expected_sql="Expected SQL output",
+        expected_tables=["table1", "table2"],
+        # ... other expected values
+    )
+]
+
+# Save dataset
+GoldenDatasetBuilder.save_dataset(cases, "custom_dataset.json")
+```
+
+### Semi-Automated Creation
+```python
+# Generate expected results from current system
+async def generate_golden_case(query, user_id=None, payload=None):
+    result = await agent.process_query(query, user_id, payload)
+    
+    # Manual review and correction needed
+    return GoldenDatasetBuilder.create_test_case(
+        test_id=f"gen_{hash(query)}",
+        natural_query=query,
+        user_id=user_id,
+        payload=payload,
+        expected_sql=result['sql_query'],  # Review this!
+        expected_tables=result['relevant_tables'],
+        expected_result=result['formatted_data']['data']
+    )
+```
+
+## Performance Monitoring
+
+### Automated Evaluation
+```python
+# Schedule regular evaluations
+import schedule
+
+def run_evaluation():
+    evaluator = PerformanceEvaluator(agent, "golden_dataset.yaml")
+    report = await evaluator.evaluate_all()
+    
+    # Send alerts if performance degrades
+    if report['evaluation_summary']['success_rate'] < 0.85:
+        send_alert(f"Performance dropped to {report['evaluation_summary']['success_rate']:.2%}")
+
+schedule.every().day.at("02:00").do(run_evaluation)
+```
+
+### A/B Testing
+```python
+# Compare two different configurations
+baseline_agent = NLToSQLAgent(db_url, api_key, config="baseline")
+experimental_agent = NLToSQLAgent(db_url, api_key, config="experimental")
+
+baseline_report = await PerformanceEvaluator(baseline_agent, dataset).evaluate_all()
+experimental_report = await PerformanceEvaluator(experimental_agent, dataset).evaluate_all()
+
+# Compare results
+improvement = (
+    experimental_report['evaluation_summary']['success_rate'] - 
+    baseline_report['evaluation_summary']['success_rate']
+)
+print(f"Performance change: {improvement:+.2%}")
+```
+
+## Metrics Deep Dive
+
+### SQL Quality Metrics
+- **Similarity Score**: Sequence-based similarity between generated and expected SQL
+- **Edit Distance**: Number of changes needed to transform generated SQL to expected
+- **Structure Match**: Whether major SQL components (SELECT, FROM, WHERE, JOIN) match
+
+### Table Selection Metrics
+- **Precision**: Correctly identified tables / Total identified tables
+- **Recall**: Correctly identified tables / Total expected tables
+- **F1 Score**: Harmonic mean of precision and recall
+- **Primary Table Accuracy**: Whether the correct primary table was selected
+
+### Result Accuracy Metrics
+- **Exact Match**: Whether query results match exactly
+- **Similarity Score**: Field-by-field comparison with tolerance
+- **Numerical Accuracy**: Precision of numerical calculations
+- **Row Count Match**: Whether returned row count matches expected
+
+### Latency Metrics
+- **Total Latency**: End-to-end processing time
+- **Stage Latencies**: Time spent in each pipeline stage
+- **P95/P99 Latencies**: 95th and 99th percentile response times
+
+## Troubleshooting
+
+### Common Issues
+1. **Low SQL Similarity**: Review prompt engineering and examples
+2. **Poor Table Selection**: Update keyword mappings and payload columns
+3. **Result Mismatches**: Check database state and expected values
+4. **High Latency**: Profile individual stages and optimize bottlenecks
+
+### Debugging Failed Cases
+```python
+# Analyze specific failures
+failed_cases = [r for r in results if not r.success]
+for case in failed_cases:
+    print(f"Failed: {case.test_id}")
+    print(f"Error: {case.error_message}")
+    print(f"SQL Generated: {case.generated_sql}")
+    print(f"Expected SQL: {test_cases[case.test_id].expected_sql}")
+```

@@ -1,0 +1,816 @@
+metadata:
+  created_at: '2025-07-27T21:56:03.025744'
+  total_cases: 50
+  version: '1.0'
+test_cases:
+- category: basic_queries
+  description: Generated basic_queries test case
+  difficulty: easy
+  expected_numerical_values: null
+  expected_primary_table: payments
+  expected_result: null
+  expected_row_count: 0
+  expected_sql: SELECT * FROM payments WHERE user_id = 'user_001'
+  expected_tables:
+  - payments
+  natural_query: Show me all payments
+  payload: null
+  tags: null
+  test_id: generated_001
+  user_id: user_001
+- category: multi_table_queries
+  description: Generated multi_table_queries test case
+  difficulty: medium
+  expected_numerical_values: null
+  expected_primary_table: payments
+  expected_result: null
+  expected_row_count: 0
+  expected_sql: SELECT m.merchant_name, COUNT(*) FROM payments p JOIN merchants m
+    ON p.merchant_id = m.merchant_id WHERE p.user_id = 'user_001' GROUP BY m.merchant_name
+    ORDER BY COUNT(*) DESC
+  expected_tables:
+  - payments
+  - merchants
+  natural_query: Which merchants do I use most?
+  payload: null
+  tags: null
+  test_id: generated_002
+  user_id: user_001
+- category: payload_queries
+  description: Generated payload_queries test case
+  difficulty: medium
+  expected_numerical_values: null
+  expected_primary_table: payments
+  expected_result: null
+  expected_row_count: 0
+  expected_sql: SELECT c.category_name, SUM(p.amount) FROM payments p JOIN categories
+    c ON p.category_id = c.category_id WHERE p.customer_id = 22 GROUP BY c.category_name
+  expected_tables:
+  - payments
+  natural_query: Customer spending by category
+  payload:
+    CIN: 22
+  tags: null
+  test_id: generated_003
+  user_id: null
+- category: basic_queries
+  description: Default generated test case
+  difficulty: easy
+  expected_numerical_values: null
+  expected_primary_table: payments
+  expected_result: null
+  expected_row_count: 0
+  expected_sql: SELECT * FROM payments
+  expected_tables:
+  - payments
+  natural_query: Show me payments
+  payload: null
+  tags: null
+  test_id: generated_004
+  user_id: null
+- category: basic_queries
+  description: Generated basic_queries test case
+  difficulty: easy
+  expected_numerical_values: null
+  expected_primary_table: payments
+  expected_result: null
+  expected_row_count: 0
+  expected_sql: SELECT SUM(amount) FROM payments WHERE user_id = 'user_001'
+  expected_tables:
+  - payments
+  natural_query: What's my total spending?
+  payload: null
+  tags: null
+  test_id: generated_005
+  user_id: user_001
+- category: multi_table_queries
+  description: Generated multi_table_queries test case
+  difficulty: medium
+  expected_numerical_values: null
+  expected_primary_table: payments
+  expected_result: null
+  expected_row_count: 0
+  expected_sql: SELECT c.category_name, b.budget_amount, SUM(p.amount) as actual FROM
+    budgets b JOIN categories c ON b.category_id = c.category_id LEFT JOIN payments
+    p ON c.category_id = p.category_id AND p.user_id = b.user_id WHERE b.user_id =
+    'user_001' GROUP BY c.category_name, b.budget_amount
+  expected_tables:
+  - payments
+  - categories
+  - budgets
+  natural_query: Compare budget vs actual
+  payload: null
+  tags: null
+  test_id: generated_006
+  user_id: user_001
+- category: payload_queries
+  description: Generated payload_queries test case
+  difficulty: medium
+  expected_numerical_values: null
+  expected_primary_table: payments
+  expected_result: null
+  expected_row_count: 0
+  expected_sql: SELECT * FROM payments WHERE customer_id = 22
+  expected_tables:
+  - payments
+  natural_query: Show customer payments
+  payload:
+    CIN: 22
+  tags: null
+  test_id: generated_007
+  user_id: null
+- category: basic_queries
+  description: Default generated test case
+  difficulty: easy
+  expected_numerical_values: null
+  expected_primary_table: payments
+  expected_result: null
+  expected_row_count: 0
+  expected_sql: SELECT * FROM payments
+  expected_tables:
+  - payments
+  natural_query: Show me payments
+  payload: null
+  tags: null
+  test_id: generated_008
+  user_id: null
+- category: basic_queries
+  description: Generated basic_queries test case
+  difficulty: easy
+  expected_numerical_values: null
+  expected_primary_table: payments
+  expected_result: null
+  expected_row_count: 0
+  expected_sql: SELECT * FROM payments WHERE amount > 100
+  expected_tables:
+  - payments
+  natural_query: Show payments over $100
+  payload: null
+  tags: null
+  test_id: generated_009
+  user_id: user_001
+- category: multi_table_queries
+  description: Generated multi_table_queries test case
+  difficulty: medium
+  expected_numerical_values: null
+  expected_primary_table: payments
+  expected_result: null
+  expected_row_count: 0
+  expected_sql: SELECT c.category_name, SUM(p.amount) FROM payments p JOIN categories
+    c ON p.category_id = c.category_id WHERE p.user_id = 'user_001' GROUP BY c.category_name
+  expected_tables:
+  - payments
+  - categories
+  natural_query: Show spending by category
+  payload: null
+  tags: null
+  test_id: generated_010
+  user_id: user_001
+- category: payload_queries
+  description: Generated payload_queries test case
+  difficulty: medium
+  expected_numerical_values: null
+  expected_primary_table: accounts
+  expected_result: null
+  expected_row_count: 0
+  expected_sql: SELECT balance FROM accounts WHERE account_number = 900914
+  expected_tables:
+  - accounts
+  natural_query: Account balance for account
+  payload:
+    account_number: 900914
+  tags: null
+  test_id: generated_011
+  user_id: null
+- category: basic_queries
+  description: Default generated test case
+  difficulty: easy
+  expected_numerical_values: null
+  expected_primary_table: payments
+  expected_result: null
+  expected_row_count: 0
+  expected_sql: SELECT * FROM payments
+  expected_tables:
+  - payments
+  natural_query: Show me payments
+  payload: null
+  tags: null
+  test_id: generated_012
+  user_id: null
+- category: basic_queries
+  description: Generated basic_queries test case
+  difficulty: easy
+  expected_numerical_values: null
+  expected_primary_table: payments
+  expected_result: null
+  expected_row_count: 0
+  expected_sql: SELECT * FROM payments WHERE user_id = 'user_001' ORDER BY transaction_date
+    DESC LIMIT 10
+  expected_tables:
+  - payments
+  natural_query: Show recent transactions
+  payload: null
+  tags: null
+  test_id: generated_013
+  user_id: user_001
+- category: multi_table_queries
+  description: Generated multi_table_queries test case
+  difficulty: medium
+  expected_numerical_values: null
+  expected_primary_table: payments
+  expected_result: null
+  expected_row_count: 0
+  expected_sql: SELECT m.merchant_name, COUNT(*) FROM payments p JOIN merchants m
+    ON p.merchant_id = m.merchant_id WHERE p.user_id = 'user_001' GROUP BY m.merchant_name
+    ORDER BY COUNT(*) DESC
+  expected_tables:
+  - payments
+  - merchants
+  natural_query: Which merchants do I use most?
+  payload: null
+  tags: null
+  test_id: generated_014
+  user_id: user_001
+- category: payload_queries
+  description: Generated payload_queries test case
+  difficulty: medium
+  expected_numerical_values: null
+  expected_primary_table: payments
+  expected_result: null
+  expected_row_count: 0
+  expected_sql: SELECT c.category_name, SUM(p.amount) FROM payments p JOIN categories
+    c ON p.category_id = c.category_id WHERE p.customer_id = 22 GROUP BY c.category_name
+  expected_tables:
+  - payments
+  natural_query: Customer spending by category
+  payload:
+    CIN: 22
+  tags: null
+  test_id: generated_015
+  user_id: null
+- category: basic_queries
+  description: Default generated test case
+  difficulty: easy
+  expected_numerical_values: null
+  expected_primary_table: payments
+  expected_result: null
+  expected_row_count: 0
+  expected_sql: SELECT * FROM payments
+  expected_tables:
+  - payments
+  natural_query: Show me payments
+  payload: null
+  tags: null
+  test_id: generated_016
+  user_id: null
+- category: basic_queries
+  description: Generated basic_queries test case
+  difficulty: easy
+  expected_numerical_values: null
+  expected_primary_table: accounts
+  expected_result: null
+  expected_row_count: 0
+  expected_sql: SELECT balance FROM accounts WHERE user_id = 'user_001'
+  expected_tables:
+  - accounts
+  natural_query: What's my account balance?
+  payload: null
+  tags: null
+  test_id: generated_017
+  user_id: user_001
+- category: multi_table_queries
+  description: Generated multi_table_queries test case
+  difficulty: medium
+  expected_numerical_values: null
+  expected_primary_table: payments
+  expected_result: null
+  expected_row_count: 0
+  expected_sql: SELECT c.category_name, b.budget_amount, SUM(p.amount) as actual FROM
+    budgets b JOIN categories c ON b.category_id = c.category_id LEFT JOIN payments
+    p ON c.category_id = p.category_id AND p.user_id = b.user_id WHERE b.user_id =
+    'user_001' GROUP BY c.category_name, b.budget_amount
+  expected_tables:
+  - payments
+  - categories
+  - budgets
+  natural_query: Compare budget vs actual
+  payload: null
+  tags: null
+  test_id: generated_018
+  user_id: user_001
+- category: payload_queries
+  description: Generated payload_queries test case
+  difficulty: medium
+  expected_numerical_values: null
+  expected_primary_table: payments
+  expected_result: null
+  expected_row_count: 0
+  expected_sql: SELECT * FROM payments WHERE customer_id = 22
+  expected_tables:
+  - payments
+  natural_query: Show customer payments
+  payload:
+    CIN: 22
+  tags: null
+  test_id: generated_019
+  user_id: null
+- category: basic_queries
+  description: Default generated test case
+  difficulty: easy
+  expected_numerical_values: null
+  expected_primary_table: payments
+  expected_result: null
+  expected_row_count: 0
+  expected_sql: SELECT * FROM payments
+  expected_tables:
+  - payments
+  natural_query: Show me payments
+  payload: null
+  tags: null
+  test_id: generated_020
+  user_id: null
+- category: basic_queries
+  description: Generated basic_queries test case
+  difficulty: easy
+  expected_numerical_values: null
+  expected_primary_table: payments
+  expected_result: null
+  expected_row_count: 0
+  expected_sql: SELECT * FROM payments WHERE user_id = 'user_001'
+  expected_tables:
+  - payments
+  natural_query: Show me all payments
+  payload: null
+  tags: null
+  test_id: generated_021
+  user_id: user_001
+- category: multi_table_queries
+  description: Generated multi_table_queries test case
+  difficulty: medium
+  expected_numerical_values: null
+  expected_primary_table: payments
+  expected_result: null
+  expected_row_count: 0
+  expected_sql: SELECT c.category_name, SUM(p.amount) FROM payments p JOIN categories
+    c ON p.category_id = c.category_id WHERE p.user_id = 'user_001' GROUP BY c.category_name
+  expected_tables:
+  - payments
+  - categories
+  natural_query: Show spending by category
+  payload: null
+  tags: null
+  test_id: generated_022
+  user_id: user_001
+- category: payload_queries
+  description: Generated payload_queries test case
+  difficulty: medium
+  expected_numerical_values: null
+  expected_primary_table: accounts
+  expected_result: null
+  expected_row_count: 0
+  expected_sql: SELECT balance FROM accounts WHERE account_number = 900914
+  expected_tables:
+  - accounts
+  natural_query: Account balance for account
+  payload:
+    account_number: 900914
+  tags: null
+  test_id: generated_023
+  user_id: null
+- category: basic_queries
+  description: Default generated test case
+  difficulty: easy
+  expected_numerical_values: null
+  expected_primary_table: payments
+  expected_result: null
+  expected_row_count: 0
+  expected_sql: SELECT * FROM payments
+  expected_tables:
+  - payments
+  natural_query: Show me payments
+  payload: null
+  tags: null
+  test_id: generated_024
+  user_id: null
+- category: basic_queries
+  description: Generated basic_queries test case
+  difficulty: easy
+  expected_numerical_values: null
+  expected_primary_table: payments
+  expected_result: null
+  expected_row_count: 0
+  expected_sql: SELECT SUM(amount) FROM payments WHERE user_id = 'user_001'
+  expected_tables:
+  - payments
+  natural_query: What's my total spending?
+  payload: null
+  tags: null
+  test_id: generated_025
+  user_id: user_001
+- category: multi_table_queries
+  description: Generated multi_table_queries test case
+  difficulty: medium
+  expected_numerical_values: null
+  expected_primary_table: payments
+  expected_result: null
+  expected_row_count: 0
+  expected_sql: SELECT m.merchant_name, COUNT(*) FROM payments p JOIN merchants m
+    ON p.merchant_id = m.merchant_id WHERE p.user_id = 'user_001' GROUP BY m.merchant_name
+    ORDER BY COUNT(*) DESC
+  expected_tables:
+  - payments
+  - merchants
+  natural_query: Which merchants do I use most?
+  payload: null
+  tags: null
+  test_id: generated_026
+  user_id: user_001
+- category: payload_queries
+  description: Generated payload_queries test case
+  difficulty: medium
+  expected_numerical_values: null
+  expected_primary_table: payments
+  expected_result: null
+  expected_row_count: 0
+  expected_sql: SELECT c.category_name, SUM(p.amount) FROM payments p JOIN categories
+    c ON p.category_id = c.category_id WHERE p.customer_id = 22 GROUP BY c.category_name
+  expected_tables:
+  - payments
+  natural_query: Customer spending by category
+  payload:
+    CIN: 22
+  tags: null
+  test_id: generated_027
+  user_id: null
+- category: basic_queries
+  description: Default generated test case
+  difficulty: easy
+  expected_numerical_values: null
+  expected_primary_table: payments
+  expected_result: null
+  expected_row_count: 0
+  expected_sql: SELECT * FROM payments
+  expected_tables:
+  - payments
+  natural_query: Show me payments
+  payload: null
+  tags: null
+  test_id: generated_028
+  user_id: null
+- category: basic_queries
+  description: Generated basic_queries test case
+  difficulty: easy
+  expected_numerical_values: null
+  expected_primary_table: payments
+  expected_result: null
+  expected_row_count: 0
+  expected_sql: SELECT * FROM payments WHERE amount > 100
+  expected_tables:
+  - payments
+  natural_query: Show payments over $100
+  payload: null
+  tags: null
+  test_id: generated_029
+  user_id: user_001
+- category: multi_table_queries
+  description: Generated multi_table_queries test case
+  difficulty: medium
+  expected_numerical_values: null
+  expected_primary_table: payments
+  expected_result: null
+  expected_row_count: 0
+  expected_sql: SELECT c.category_name, b.budget_amount, SUM(p.amount) as actual FROM
+    budgets b JOIN categories c ON b.category_id = c.category_id LEFT JOIN payments
+    p ON c.category_id = p.category_id AND p.user_id = b.user_id WHERE b.user_id =
+    'user_001' GROUP BY c.category_name, b.budget_amount
+  expected_tables:
+  - payments
+  - categories
+  - budgets
+  natural_query: Compare budget vs actual
+  payload: null
+  tags: null
+  test_id: generated_030
+  user_id: user_001
+- category: payload_queries
+  description: Generated payload_queries test case
+  difficulty: medium
+  expected_numerical_values: null
+  expected_primary_table: payments
+  expected_result: null
+  expected_row_count: 0
+  expected_sql: SELECT * FROM payments WHERE customer_id = 22
+  expected_tables:
+  - payments
+  natural_query: Show customer payments
+  payload:
+    CIN: 22
+  tags: null
+  test_id: generated_031
+  user_id: null
+- category: basic_queries
+  description: Default generated test case
+  difficulty: easy
+  expected_numerical_values: null
+  expected_primary_table: payments
+  expected_result: null
+  expected_row_count: 0
+  expected_sql: SELECT * FROM payments
+  expected_tables:
+  - payments
+  natural_query: Show me payments
+  payload: null
+  tags: null
+  test_id: generated_032
+  user_id: null
+- category: basic_queries
+  description: Generated basic_queries test case
+  difficulty: easy
+  expected_numerical_values: null
+  expected_primary_table: payments
+  expected_result: null
+  expected_row_count: 0
+  expected_sql: SELECT * FROM payments WHERE user_id = 'user_001' ORDER BY transaction_date
+    DESC LIMIT 10
+  expected_tables:
+  - payments
+  natural_query: Show recent transactions
+  payload: null
+  tags: null
+  test_id: generated_033
+  user_id: user_001
+- category: multi_table_queries
+  description: Generated multi_table_queries test case
+  difficulty: medium
+  expected_numerical_values: null
+  expected_primary_table: payments
+  expected_result: null
+  expected_row_count: 0
+  expected_sql: SELECT c.category_name, SUM(p.amount) FROM payments p JOIN categories
+    c ON p.category_id = c.category_id WHERE p.user_id = 'user_001' GROUP BY c.category_name
+  expected_tables:
+  - payments
+  - categories
+  natural_query: Show spending by category
+  payload: null
+  tags: null
+  test_id: generated_034
+  user_id: user_001
+- category: payload_queries
+  description: Generated payload_queries test case
+  difficulty: medium
+  expected_numerical_values: null
+  expected_primary_table: accounts
+  expected_result: null
+  expected_row_count: 0
+  expected_sql: SELECT balance FROM accounts WHERE account_number = 900914
+  expected_tables:
+  - accounts
+  natural_query: Account balance for account
+  payload:
+    account_number: 900914
+  tags: null
+  test_id: generated_035
+  user_id: null
+- category: basic_queries
+  description: Default generated test case
+  difficulty: easy
+  expected_numerical_values: null
+  expected_primary_table: payments
+  expected_result: null
+  expected_row_count: 0
+  expected_sql: SELECT * FROM payments
+  expected_tables:
+  - payments
+  natural_query: Show me payments
+  payload: null
+  tags: null
+  test_id: generated_036
+  user_id: null
+- category: basic_queries
+  description: Generated basic_queries test case
+  difficulty: easy
+  expected_numerical_values: null
+  expected_primary_table: accounts
+  expected_result: null
+  expected_row_count: 0
+  expected_sql: SELECT balance FROM accounts WHERE user_id = 'user_001'
+  expected_tables:
+  - accounts
+  natural_query: What's my account balance?
+  payload: null
+  tags: null
+  test_id: generated_037
+  user_id: user_001
+- category: multi_table_queries
+  description: Generated multi_table_queries test case
+  difficulty: medium
+  expected_numerical_values: null
+  expected_primary_table: payments
+  expected_result: null
+  expected_row_count: 0
+  expected_sql: SELECT m.merchant_name, COUNT(*) FROM payments p JOIN merchants m
+    ON p.merchant_id = m.merchant_id WHERE p.user_id = 'user_001' GROUP BY m.merchant_name
+    ORDER BY COUNT(*) DESC
+  expected_tables:
+  - payments
+  - merchants
+  natural_query: Which merchants do I use most?
+  payload: null
+  tags: null
+  test_id: generated_038
+  user_id: user_001
+- category: payload_queries
+  description: Generated payload_queries test case
+  difficulty: medium
+  expected_numerical_values: null
+  expected_primary_table: payments
+  expected_result: null
+  expected_row_count: 0
+  expected_sql: SELECT c.category_name, SUM(p.amount) FROM payments p JOIN categories
+    c ON p.category_id = c.category_id WHERE p.customer_id = 22 GROUP BY c.category_name
+  expected_tables:
+  - payments
+  natural_query: Customer spending by category
+  payload:
+    CIN: 22
+  tags: null
+  test_id: generated_039
+  user_id: null
+- category: basic_queries
+  description: Default generated test case
+  difficulty: easy
+  expected_numerical_values: null
+  expected_primary_table: payments
+  expected_result: null
+  expected_row_count: 0
+  expected_sql: SELECT * FROM payments
+  expected_tables:
+  - payments
+  natural_query: Show me payments
+  payload: null
+  tags: null
+  test_id: generated_040
+  user_id: null
+- category: basic_queries
+  description: Generated basic_queries test case
+  difficulty: easy
+  expected_numerical_values: null
+  expected_primary_table: payments
+  expected_result: null
+  expected_row_count: 0
+  expected_sql: SELECT * FROM payments WHERE user_id = 'user_001'
+  expected_tables:
+  - payments
+  natural_query: Show me all payments
+  payload: null
+  tags: null
+  test_id: generated_041
+  user_id: user_001
+- category: multi_table_queries
+  description: Generated multi_table_queries test case
+  difficulty: medium
+  expected_numerical_values: null
+  expected_primary_table: payments
+  expected_result: null
+  expected_row_count: 0
+  expected_sql: SELECT c.category_name, b.budget_amount, SUM(p.amount) as actual FROM
+    budgets b JOIN categories c ON b.category_id = c.category_id LEFT JOIN payments
+    p ON c.category_id = p.category_id AND p.user_id = b.user_id WHERE b.user_id =
+    'user_001' GROUP BY c.category_name, b.budget_amount
+  expected_tables:
+  - payments
+  - categories
+  - budgets
+  natural_query: Compare budget vs actual
+  payload: null
+  tags: null
+  test_id: generated_042
+  user_id: user_001
+- category: payload_queries
+  description: Generated payload_queries test case
+  difficulty: medium
+  expected_numerical_values: null
+  expected_primary_table: payments
+  expected_result: null
+  expected_row_count: 0
+  expected_sql: SELECT * FROM payments WHERE customer_id = 22
+  expected_tables:
+  - payments
+  natural_query: Show customer payments
+  payload:
+    CIN: 22
+  tags: null
+  test_id: generated_043
+  user_id: null
+- category: basic_queries
+  description: Default generated test case
+  difficulty: easy
+  expected_numerical_values: null
+  expected_primary_table: payments
+  expected_result: null
+  expected_row_count: 0
+  expected_sql: SELECT * FROM payments
+  expected_tables:
+  - payments
+  natural_query: Show me payments
+  payload: null
+  tags: null
+  test_id: generated_044
+  user_id: null
+- category: basic_queries
+  description: Generated basic_queries test case
+  difficulty: easy
+  expected_numerical_values: null
+  expected_primary_table: payments
+  expected_result: null
+  expected_row_count: 0
+  expected_sql: SELECT SUM(amount) FROM payments WHERE user_id = 'user_001'
+  expected_tables:
+  - payments
+  natural_query: What's my total spending?
+  payload: null
+  tags: null
+  test_id: generated_045
+  user_id: user_001
+- category: multi_table_queries
+  description: Generated multi_table_queries test case
+  difficulty: medium
+  expected_numerical_values: null
+  expected_primary_table: payments
+  expected_result: null
+  expected_row_count: 0
+  expected_sql: SELECT c.category_name, SUM(p.amount) FROM payments p JOIN categories
+    c ON p.category_id = c.category_id WHERE p.user_id = 'user_001' GROUP BY c.category_name
+  expected_tables:
+  - payments
+  - categories
+  natural_query: Show spending by category
+  payload: null
+  tags: null
+  test_id: generated_046
+  user_id: user_001
+- category: payload_queries
+  description: Generated payload_queries test case
+  difficulty: medium
+  expected_numerical_values: null
+  expected_primary_table: accounts
+  expected_result: null
+  expected_row_count: 0
+  expected_sql: SELECT balance FROM accounts WHERE account_number = 900914
+  expected_tables:
+  - accounts
+  natural_query: Account balance for account
+  payload:
+    account_number: 900914
+  tags: null
+  test_id: generated_047
+  user_id: null
+- category: basic_queries
+  description: Default generated test case
+  difficulty: easy
+  expected_numerical_values: null
+  expected_primary_table: payments
+  expected_result: null
+  expected_row_count: 0
+  expected_sql: SELECT * FROM payments
+  expected_tables:
+  - payments
+  natural_query: Show me payments
+  payload: null
+  tags: null
+  test_id: generated_048
+  user_id: null
+- category: basic_queries
+  description: Generated basic_queries test case
+  difficulty: easy
+  expected_numerical_values: null
+  expected_primary_table: payments
+  expected_result: null
+  expected_row_count: 0
+  expected_sql: SELECT * FROM payments WHERE amount > 100
+  expected_tables:
+  - payments
+  natural_query: Show payments over $100
+  payload: null
+  tags: null
+  test_id: generated_049
+  user_id: user_001
+- category: multi_table_queries
+  description: Generated multi_table_queries test case
+  difficulty: medium
+  expected_numerical_values: null
+  expected_primary_table: payments
+  expected_result: null
+  expected_row_count: 0
+  expected_sql: SELECT m.merchant_name, COUNT(*) FROM payments p JOIN merchants m
+    ON p.merchant_id = m.merchant_id WHERE p.user_id = 'user_001' GROUP BY m.merchant_name
+    ORDER BY COUNT(*) DESC
+  expected_tables:
+  - payments
+  - merchants
+  natural_query: Which merchants do I use most?
+  payload: null
+  tags: null
+  test_id: generated_050
+  user_id: user_001

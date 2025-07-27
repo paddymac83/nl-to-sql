@@ -1,0 +1,109 @@
+{
+  "evaluation_summary": {
+    "total_test_cases": 2,
+    "successful_cases": 0,
+    "success_rate": 0.0,
+    "executable_cases": 0,
+    "execution_rate": 0.0,
+    "evaluation_timestamp": "2025-07-27T21:58:50.233377"
+  },
+  "sql_quality_metrics": {
+    "average_similarity": 0,
+    "median_similarity": 0,
+    "structure_match_rate": 0.0,
+    "similarity_distribution": {
+      "excellent (>0.9)": 0,
+      "good (0.7-0.9)": 0,
+      "poor (<0.7)": 0
+    }
+  },
+  "table_selection_metrics": {
+    "average_precision": 0.75,
+    "average_recall": 1.0,
+    "average_f1": 0.8333333333333333,
+    "primary_table_accuracy": 1.0
+  },
+  "result_accuracy_metrics": {
+    "exact_match_rate": 0.0,
+    "average_result_similarity": 0,
+    "median_result_similarity": 0
+  },
+  "latency_metrics": {
+    "average_latency_ms": 382.52878189086914,
+    "median_latency_ms": 382.52878189086914,
+    "p95_latency_ms": 0,
+    "p99_latency_ms": 0
+  },
+  "error_analysis": {
+    "error_categories": {
+      "sql_generation": 2
+    },
+    "most_common_errors": [
+      [
+        "sql_generation",
+        2
+      ]
+    ]
+  },
+  "detailed_results": [
+    {
+      "test_id": "basic_payment_query",
+      "success": false,
+      "sql_similarity_score": 0.0,
+      "sql_edit_distance": 0,
+      "sql_structure_match": false,
+      "table_precision": 1.0,
+      "table_recall": 1.0,
+      "table_f1": 1.0,
+      "primary_table_correct": true,
+      "result_exact_match": false,
+      "numerical_accuracy": null,
+      "row_count_match": false,
+      "result_similarity_score": 0.0,
+      "execution_successful": false,
+      "error_message": "SQL generation error: Error code: 401 - {'error': {'message': 'Incorrect API key provided: api-key. You can find your API key at https://platform.openai.com/account/api-keys.', 'type': 'invalid_request_error', 'param': None, 'code': 'invalid_api_key'}}",
+      "error_category": "sql_generation",
+      "total_latency": 568.809986114502,
+      "stage_latencies": {
+        "total": 568.809986114502
+      },
+      "generated_sql": "",
+      "generated_tables": [
+        "payments"
+      ],
+      "generated_primary_table": "payments",
+      "actual_result": null
+    },
+    {
+      "test_id": "multi_table_category_query",
+      "success": false,
+      "sql_similarity_score": 0.0,
+      "sql_edit_distance": 0,
+      "sql_structure_match": false,
+      "table_precision": 0.5,
+      "table_recall": 1.0,
+      "table_f1": 0.6666666666666666,
+      "primary_table_correct": true,
+      "result_exact_match": false,
+      "numerical_accuracy": null,
+      "row_count_match": false,
+      "result_similarity_score": 0.0,
+      "execution_successful": false,
+      "error_message": "SQL generation error: Error code: 401 - {'error': {'message': 'Incorrect API key provided: api-key. You can find your API key at https://platform.openai.com/account/api-keys.', 'type': 'invalid_request_error', 'param': None, 'code': 'invalid_api_key'}}",
+      "error_category": "sql_generation",
+      "total_latency": 196.24757766723633,
+      "stage_latencies": {
+        "total": 196.24757766723633
+      },
+      "generated_sql": "",
+      "generated_tables": [
+        "accounts",
+        "users",
+        "categories",
+        "payments"
+      ],
+      "generated_primary_table": "payments",
+      "actual_result": null
+    }
+  ]
+}

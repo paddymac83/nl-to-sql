@@ -1,0 +1,61 @@
+{
+  "metadata": {
+    "created_at": "2025-07-27T21:58:49.467089",
+    "total_cases": 2,
+    "version": "1.0"
+  },
+  "test_cases": [
+    {
+      "test_id": "basic_payment_query",
+      "natural_query": "Show me all payments over $100",
+      "user_id": null,
+      "payload": null,
+      "expected_sql": "SELECT * FROM payments WHERE amount > 100",
+      "expected_tables": [
+        "payments"
+      ],
+      "expected_primary_table": "payments",
+      "expected_result": null,
+      "expected_row_count": 5,
+      "expected_numerical_values": {
+        "amount": 650.0
+      },
+      "difficulty": "easy",
+      "category": "payments",
+      "description": "Basic payment filtering query",
+      "tags": null
+    },
+    {
+      "test_id": "multi_table_category_query",
+      "natural_query": "Show spending by category",
+      "user_id": null,
+      "payload": {
+        "CIN": 22
+      },
+      "expected_sql": "SELECT c.category_name, SUM(p.amount) FROM payments p JOIN categories c ON p.category_id = c.category_id WHERE p.customer_id = 22 GROUP BY c.category_name",
+      "expected_tables": [
+        "payments",
+        "categories"
+      ],
+      "expected_primary_table": "payments",
+      "expected_result": [
+        {
+          "category_name": "Food",
+          "sum": 150.5
+        },
+        {
+          "category_name": "Transport",
+          "sum": 89.25
+        }
+      ],
+      "expected_row_count": 0,
+      "expected_numerical_values": {
+        "sum": 239.75
+      },
+      "difficulty": "medium",
+      "category": "categories",
+      "description": "Multi-table query with payload filtering",
+      "tags": null
+    }
+  ]
+}
